@@ -1,0 +1,342 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Numerics;
+using System.Xml.Linq;
+using Unity.VisualScripting;
+using UnityEngine;
+
+public class VectorXs
+{
+    private List<double> elements;
+    private int Size => elements.Count;
+
+    public VectorXs(int size)
+    {
+        elements = new List<double>(size);
+        for (int i = 0; i < size; i++)
+        {
+            elements[i] = 0;
+        }
+    }
+
+    public double this[int index]
+    {
+        get => elements[index];
+        set => elements[index] = value;
+    }
+
+    public static VectorXs operator +(VectorXs a, VectorXs b)
+    {
+        if (a.Size != b.Size)
+            throw new System.Exception("벡터의 크기가 다릅니다.");
+
+        VectorXs result = new VectorXs(a.Size);
+        for (int i = 0; i < a.Size; i++)
+        {
+            result[i] = a[i] + b[i];
+        }
+        return result;
+    }
+
+    public int size()
+    {
+        return elements.Count;
+    }
+
+    public void resize(int size)
+    {
+        List<double> values = new List<double>(size);
+        for (int i = 0; i < size; i++)
+        {
+            values[i] = elements[i];
+        }
+
+        elements = new List<double>(size);
+        for (int i = 0; i < size; i++)
+        {
+            elements[i] = values[i];
+        }
+    }
+
+    public Vectors segment(int start, int n)
+    {
+        Vectors vectors = new Vectors(n);
+        for (int i = start; i < start + n; i++)
+        {
+            vectors[i - start] = elements[i];
+        }
+        return vectors;
+    }
+
+    // .segment() = Vectors 형태일 때 사용
+    public void SetSegment(int start, int n, Vectors v)
+    {
+        if (v.DIM != n)
+            throw new System.Exception("벡터의 크기가 다릅니다.");
+
+        for (int i = start; i < start + n; i++)
+        {
+            if (i >= elements.Count)
+            {
+                elements.Add(elements[i]);
+            }
+            else
+            {
+                elements[i] = v[i - start];
+            }
+        }
+    }
+}
+
+public class VectorXi
+{
+    public List<int> elements;
+    public int Size => elements.Count;
+
+    public VectorXi(int size)
+    {
+        elements = new List<int>(new int[size]);
+    }
+
+    public int this[int index]
+    {
+        get => elements[index];
+        set => elements[index] = value;
+    }
+
+    public static VectorXi operator +(VectorXi a, VectorXi b)
+    {
+        if (a.Size != b.Size)
+            throw new System.Exception("벡터의 크기가 다릅니다.");
+
+        VectorXi result = new VectorXi(a.Size);
+        for (int i = 0; i < a.Size; i++)
+        {
+            result[i] = a[i] + b[i];
+        }
+        return result;
+    }
+}
+
+//희소 행렬에 사용
+public class Triplets
+{
+    private int row { get; set; }
+    private int col { get; set; }
+    private double value { get; set; }
+
+    public Triplets(int  r, int c, double v)
+    {
+        row = r;
+        col = c;
+        value = v;
+    }
+}
+
+public class TripletXs
+{
+    private List<Triplets> list;
+
+    public TripletXs()
+    {
+        list = new List<Triplets>();
+    }
+
+    public Triplets this[int index]
+    {
+        get => list[index];
+        set => list[index] = value;
+    }
+
+    public void Add(int row, int col, int value)
+    {
+        Triplets triplets = new Triplets(row, col, value);
+        list.Add(triplets);
+    }
+
+    public void Add(Triplets triplets)
+    {
+        list.Add(triplets);
+    }
+}
+
+public class Vectors //<DIM>으로 구현되어 있는거 클래스 변수로 바꿈
+{
+    private int now;
+    public int DIM;
+    private double[] values;
+
+    public Vectors(int dim)
+    {
+        DIM = dim;
+        values = new double[dim];
+        now = 0;
+    }
+
+    public double this[int index]
+    {
+        get => values[index];
+        set => values[index] = value;
+    }
+
+    public static Vectors operator +(Vectors a, Vectors b)
+    {
+        if (a.DIM != b.DIM)
+            throw new System.Exception("벡터의 크기가 다릅니다.");
+
+        Vectors result = new Vectors(a.DIM);
+        for (int i = 0; i < a.DIM; i++)
+        {
+            result[i] = a[i] + b[i];
+        }
+        return result;
+    }
+
+    public static Vectors operator -(Vectors a, Vectors b)
+    {
+        if (a.DIM != b.DIM)
+            throw new System.Exception("벡터의 크기가 다릅니다.");
+
+        Vectors result = new Vectors(a.DIM);
+        for (int i = 0; i < a.DIM; i++)
+        {
+            result[i] = a[i] - b[i];
+        }
+        return result;
+    }
+
+    public static Vectors operator *(Vectors a, double b)
+    {
+        Vectors result = new Vectors(a.DIM);
+        for (int i = 0; i < a.DIM; i++)
+        {
+            result[i] = a[i] * b;
+        }
+        return result;
+    }
+
+    public Vectors normalized()
+    {
+        double sum = 0;
+        Vectors vectors = new Vectors(DIM);
+        for (int i = 0; i < DIM; i++)
+        {
+            sum += values[i] * values[i];
+        }
+
+        if (sum > 0)
+        {
+            sum = Math.Sqrt(sum);
+            for (int i = 0; i < DIM; i++)
+            {
+                vectors[i] = values[i] * sum;
+            }
+        }
+        return vectors;
+    }
+
+    public double squaredNorm()
+    {
+        double sum = 0;
+        for (int i = 0; i < DIM; i++)
+        {
+            sum += values[i] * values[i];
+        }
+        return sum;
+    }
+
+}
+
+public class MatrixXs
+{
+    private int rows; // 행 개수
+    private int cols; // 열 개수
+    private double[,] data; // 행렬 데이터
+
+    public MatrixXs(int rows, int cols)
+    {
+        this.rows = rows;
+        this.cols = cols;
+        data = new double[rows, cols];
+    }
+
+    public void SetElement(int row, int col, double value)
+    {
+        if (row >= 0 && row < rows && col >= 0 && col < cols)
+        {
+            data[row, col] = value;
+        }
+        else
+        {
+            throw new IndexOutOfRangeException("인덱스가 범위를 벗어났습니다.");
+        }
+    }
+
+    // 요소를 가져오는 메서드
+    public double GetElement(int row, int col)
+    {
+        if (row >= 0 && row < rows && col >= 0 && col < cols)
+        {
+            return data[row, col];
+        }
+        else
+        {
+            throw new IndexOutOfRangeException("인덱스가 범위를 벗어났습니다.");
+        }
+    }
+
+    // 행렬 덧셈 메서드
+    public static MatrixXs operator+(MatrixXs a, MatrixXs b)
+    {
+        if (a.rows != b.rows || a.cols != b.cols)
+        {
+            throw new InvalidOperationException("행렬의 크기가 일치하지 않습니다.");
+        }
+
+        MatrixXs result = new MatrixXs(a.rows, a.cols);
+        for (int i = 0; i < a.rows; i++)
+        {
+            for (int j = 0; j < a.cols; j++)
+            {
+                result.SetElement(i, j, a.GetElement(i, j) + b.GetElement(i, j));
+            }
+        }
+
+        return result;
+    }
+
+    // 행렬 곱셈 메서드
+    public static MatrixXs operator*(MatrixXs a, MatrixXs b)
+    {
+        if (a.cols != b.rows)
+        {
+            throw new InvalidOperationException("첫 번째 행렬의 열의 개수와 두 번째 행렬의 행의 개수가 일치해야 합니다.");
+        }
+
+        MatrixXs result = new MatrixXs(a.rows, b.cols);
+        for (int i = 0; i < a.rows; i++)
+        {
+            for (int j = 0; j < b.cols; j++)
+            {
+                double sum = 0;
+                for (int k = 0; k < a.cols; k++)
+                {
+                    sum += a.GetElement(i, k) * b.GetElement(k, j);
+                }
+                result.SetElement(i, j, sum);
+            }
+        }
+        return result;
+    }
+
+    public Vectors row(int i)
+    {
+        Vectors v = new Vectors(cols);
+        for (int j = 0; j < cols; j++)
+        {
+            v[j] = data[i, j];
+        }
+        return v;
+    }
+}
