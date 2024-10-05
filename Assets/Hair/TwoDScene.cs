@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -207,7 +208,59 @@ public class TwoDScene
     private Vectors m_bb_min;
     private Vectors m_bb_max;
 
+    private FluidSim m_fluid_sim;
+
+    private PolygonalCohesion m_polygonal_cohesion;
+
+    private List<byte> m_fixed;
+
+    private List<Tuple<int, int>> m_edges;
+    private VectorXs m_edge_radii;
+    private VectorXs m_edge_rest_radii;
+    private VectorXs m_edge_rest_length;
+    private VectorXs m_edge_poisson_ratio;
+
+    private List<Force> m_forces;
+    private List<Force> m_external_forces;
+    private List<Force> m_internal_forces;
+    private List<List<Force>> m_hair_internal_forces; // hair-> forces only affecting that hair
+    private List<Force> m_inter_hair_forces; // String 'tags' assinged to  particles. Can be used to identify and single out
+    private List<String> m_particle_tags;
+
+    private List<int> m_particle_to_hairs;
+
+    private List<int> m_script_grout;
+
+    private List<VectorXs> m_scripted_translate;
+
+    private List<Quaternion> m_scripted_rotation;
+
+    private List<int> m_particle_to_hair_local_indices;
+
+    private List<HairFlow> m_flows;
+
+    private List<List<int>> m_particle_to_edge;
+
+    private List<HashSet<int>> m_bp_edge_edge_pairs;
+    private List<HashSet<int>> m_bp_particle_edge_pairs;
+    private List<HashSet<int>> m_bp_particle_particle_pairs;
+
+    private List<StrandParameters> m_strandParameters;
+    private List<StrandEquilibriumParameters> m_strandEquilibriumParameters;
+
     private bool m_massSpringSim;
+
+    private double m_volume_hair;
+    private double m_volume_particle;
+    private double m_volume_particle_insterted;
+    private double m_volume_particle_removed;
+    private double m_volume_reservoir;
+
+    private double m_volume_hair_old;
+    private double m_volume_particle_old;
+    private double m_volume_reservoir_old;
+
+    private VectorXi m_constraint_idx;
 
     private WetHairParameter m_parameters;
 

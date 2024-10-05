@@ -6,6 +6,18 @@ using System.Xml.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
 
+//Custom Math
+public class CMath
+{
+    public static double PI_4 = 0.785398163397448309616;
+    public static double M_PI = 3.14159265358979323846;
+
+    public static double cube(double x)
+    {
+        return x * x * x;
+    }
+}
+
 public class VectorXs
 {
     private List<double> elements;
@@ -261,6 +273,20 @@ public class MatrixXs
         data = new double[rows, cols];
     }
 
+    public MatrixXs(MatrixXs other)
+    {
+        rows = other.rows;
+        cols = other.cols;
+        for (int i = 0;i < rows;i++)
+            for (int j = 0;j < cols;j++)
+                data[i, j] = other.data[i, j];
+    }
+
+    public MatrixXs Clone()
+    {
+        return new MatrixXs(this);
+    }
+
     public void SetElement(int row, int col, double value)
     {
         if (row >= 0 && row < rows && col >= 0 && col < cols)
@@ -284,6 +310,13 @@ public class MatrixXs
         {
             throw new IndexOutOfRangeException("인덱스가 범위를 벗어났습니다.");
         }
+    }
+
+    public void setZero()
+    {
+        for (int i = 0; i < rows; i++)
+            for (int j = 0; j < cols; j++)
+                data[i, j] = 0;
     }
 
     // 행렬 덧셈 메서드
@@ -330,6 +363,21 @@ public class MatrixXs
         return result;
     }
 
+    public double this[int i, int j]
+    {
+        get => data[i, j];
+        set => data[i, j] = value;
+    }
+
+    public MatrixXs transpose()
+    {
+        MatrixXs matrix = new MatrixXs(cols, rows);
+        for (int i = 0; i < cols; i++)
+            for (int j = 0; j < rows; j++)
+                matrix.data[j, i] = data[i, j];
+        return matrix;
+    }
+
     public Vectors row(int i)
     {
         Vectors v = new Vectors(cols);
@@ -338,5 +386,41 @@ public class MatrixXs
             v[j] = data[i, j];
         }
         return v;
+    }
+}
+
+public class Rotation2D
+{
+    private double angle;  // 회전 각도 (라디안)
+
+    public Rotation2D(double angleInRadians)
+    {
+        angle = angleInRadians;
+    }
+
+    // 회전 행렬을 사용하여 벡터 (x, y)를 회전
+    public (double x, double y) Rotate(double x, double y)
+    {
+        double cosTheta = Math.Cos(angle);
+        double sinTheta = Math.Sin(angle);
+
+        double newX = cosTheta * x - sinTheta * y;
+        double newY = sinTheta * x + cosTheta * y;
+
+        return (newX, newY);
+    }
+
+    public MatrixXs toRotationMatrix()
+    {
+        double cosTheta = Math.Cos(angle);
+        double sinTheta = Math.Sin(angle);
+        MatrixXs matrix = new MatrixXs(2, 2);
+
+        matrix[0, 0] = cosTheta;
+        matrix[0, 1] = -sinTheta;
+        matrix[1, 0] = sinTheta;
+        matrix[1, 1] = cosTheta;
+
+        return matrix;
     }
 }
