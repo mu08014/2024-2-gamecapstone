@@ -11,6 +11,11 @@ public class PhysicalRadius : DependencyNode<double>
         setClean();
     }
 
+    public PhysicalRadius Clone()
+    {
+        return new PhysicalRadius(this.m_value);
+    }
+
     public virtual string name() { return "PhyscialRadius"; }
 
     protected override void compute() { }
@@ -26,6 +31,11 @@ public class BaseRotation : DependencyNode<double>
     public virtual string name() { return "BaseRotation"; }
 
     protected override void compute() { }
+
+    public BaseRotation Clone()
+    {
+        return new BaseRotation(this.m_value);
+    }
 }
 
 //Unit: cm^4
@@ -36,8 +46,8 @@ public class BendingMatrixBase : DependencyNode<MatrixXs>
 
     public BendingMatrixBase(PhysicalRadius rad, BaseRotation baseRotation) : base(new MatrixXs(2, 2))
     {
-        m_physicalRadius = rad;
-        m_baseRotation = baseRotation;
+        m_physicalRadius = rad.Clone();
+        m_baseRotation = baseRotation.Clone();
         m_value.setZero();
         m_physicalRadius.addDependent(this);
         m_baseRotation.addDependent(this);
@@ -61,6 +71,11 @@ public class BendingMatrixBase : DependencyNode<MatrixXs>
 
         setDependentsDirty();
     }
+
+    public BendingMatrixBase Clone()
+    {
+        return new BendingMatrixBase(this.m_physicalRadius, this.m_baseRotation);
+    }
 }
 
 // Unit: dPa = g cm^-1 s^-2
@@ -74,6 +89,11 @@ public class YoungsModulus : DependencyNode<double>
     public virtual string name() { return "YoungsModulus"; }
 
     protected override void compute() { }
+
+    public YoungsModulus Clone()
+    {
+        return new YoungsModulus(this.m_value);
+    }
 }
 
 // Unit: dPa = g cm^-1 s^-2
@@ -87,6 +107,11 @@ public class ShearModulus : DependencyNode<double>
     public virtual string name() { return "ShearModulus"; }
 
     protected override void compute() { }
+
+    public ShearModulus Clone()
+    {
+        return new ShearModulus(this.m_value);
+    }
 }
 
 // Unit : 10^-5 N = g cm s^-2
@@ -97,8 +122,8 @@ public class ElasticKs : DependencyNode<double>
 
     public ElasticKs(PhysicalRadius rad, YoungsModulus ym) : base(double.NaN)
     {
-        m_physicalRadius = rad;
-        m_youngsModulus = ym;
+        m_physicalRadius = rad.Clone();
+        m_youngsModulus = ym.Clone();
         m_physicalRadius.addDependent(this);
         m_youngsModulus.addDependent(this);
     }
@@ -124,8 +149,8 @@ public class ElasticKt : DependencyNode<double>
 
     public ElasticKt(PhysicalRadius rad, ShearModulus sm) : base(double.NaN)
     {
-        m_physicalRadius = rad;
-        m_shearModulus = sm;
+        m_physicalRadius = rad.Clone();
+        m_shearModulus = sm.Clone();
         m_physicalRadius.addDependent(this);
         m_shearModulus.addDependent(this);
     }

@@ -268,7 +268,44 @@ public class TwoDScene
 
     public TwoDScene(in bool isMassSpring)
     {
+        m_x = new VectorXs();
+        m_base_x = new VectorXs();
+        m_v = new VectorXs();
+        m_m = new VectorXs();
+        m_interpolated_m = new VectorXs();
+        m_fixed = new List<byte>();
+        m_radii = new VectorXs();
+        m_edges = new List<Tuple<int, int>>();
+        m_edge_radii = new VectorXs();
+        m_forces = new List<Force>();
+        m_particle_tags = new List<string>();
         m_massSpringSim = isMassSpring;
+        m_fluid_sim = null;
+        m_polygonal_cohesion = null;
+        m_massSpringSim = isMassSpring;
+    }
+
+    public TwoDScene(in TwoDScene otherscene, in bool isMassSpring)
+    {
+        m_x = otherscene.m_x;
+        m_base_x = otherscene.m_base_x;
+        m_v = otherscene.m_v;
+        m_m = otherscene.m_m;
+        m_interpolated_m = otherscene.m_interpolated_m;
+        m_rest_m = otherscene.m_rest_m;
+        m_fixed = otherscene.m_fixed;
+        m_radii = new VectorXs();
+        m_edges = new List<Tuple<int, int>>();
+        m_edge_radii = new VectorXs();
+        m_forces = new List<Force>(otherscene.m_forces.Count);
+        m_particle_tags = new List<String>();
+        m_fluid_sim = null;
+        m_polygonal_cohesion = null;
+        m_massSpringSim = isMassSpring;
+        for (int i = 0; i<m_forces.Count; i++)
+        {
+            m_forces[i] = otherscene.m_forces[i].Clone();
+        }
     }
 
     public int getDof(int particle)

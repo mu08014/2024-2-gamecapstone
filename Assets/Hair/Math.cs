@@ -11,6 +11,7 @@ public class CMath
 {
     public static double PI_4 = 0.785398163397448309616;
     public static double M_PI = 3.14159265358979323846;
+    public static double M_PI_4 = 0.785398163397448309616;
 
     public static double cube(double x)
     {
@@ -22,6 +23,11 @@ public class VectorXs
 {
     private List<double> elements;
     private int Size => elements.Count;
+
+    public VectorXs()
+    {
+        elements = new List<double>();
+    }
 
     public VectorXs(int size)
     {
@@ -266,6 +272,13 @@ public class MatrixXs
     private int cols; // 열 개수
     private double[,] data; // 행렬 데이터
 
+    public MatrixXs()
+    {
+        rows = 0;
+        cols = 0;
+        data = new double[rows, cols];
+    }
+
     public MatrixXs(int rows, int cols)
     {
         this.rows = rows;
@@ -363,6 +376,20 @@ public class MatrixXs
         return result;
     }
 
+    public static MatrixXs operator*(double a, MatrixXs b)
+    {
+        MatrixXs result = new MatrixXs(b.rows, b.cols);
+        for (int i = 0; i < b.rows; i++)
+        {
+            for (int j = 0; j < b.cols; j++)
+            {
+                result[i, j] = b[i, j];
+                result[i, j] *= a;
+            }
+        }
+        return result;
+    }
+
     public double this[int i, int j]
     {
         get => data[i, j];
@@ -423,4 +450,46 @@ public class Rotation2D
 
         return matrix;
     }
+}
+
+public class SparseXs
+{
+    private Dictionary<(int, int), double> matrix;
+    public int Rows { get; private set; }
+    public int Cols { get; private set; }
+
+    public SparseXs(int rows, int cols)
+    {
+        matrix = new Dictionary<(int, int), double>();
+        Rows = rows;
+        Cols = cols;
+    }
+
+    public void insert(int row, int col, double value)
+    {
+        if (row >= Rows || col >= Cols || row < 0 || col < 0)
+        {
+            throw new ArgumentOutOfRangeException("Invalid matrix indices.");
+        }
+
+        if (value == 0)
+        {
+            matrix.Remove((row, col));
+        }
+        else
+        {
+            matrix[(row, col)] = value;
+        }
+    }
+
+    public double GetValue(int row, int col)
+    {
+        if (row >= Rows || col >= Cols || row < 0 || col < 0)
+        {
+            throw new ArgumentOutOfRangeException("Invalid matrix indices.");
+        }
+
+        return matrix.ContainsKey((row, col)) ? matrix[(row, col)] : 0.0;
+    }
+
 }

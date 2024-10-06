@@ -5,7 +5,7 @@ using System.Security.Cryptography;
 using UnityEngine;
 using UnityEngine.Pool;
 
-abstract public class Force
+public class Force
 {
     protected int m_internal_index_pos;
     protected int m_internal_index_vel;
@@ -14,6 +14,23 @@ abstract public class Force
     protected int m_internal_index_Jv;
     protected int m_internal_index_Jxv;
     protected int m_intermal_index_tildeK;
+
+    public Force() { }
+
+    public Force(Force other)
+    {
+        this.m_internal_index_pos = other.m_internal_index_pos;
+        this.m_internal_index_vel = other.m_internal_index_vel;
+        this.m_internal_index_J = other.m_internal_index_J;
+        this.m_internal_index_Jv = other.m_internal_index_Jv;
+        this.m_internal_index_Jxv = other.m_internal_index_Jxv;
+        this.m_intermal_index_tildeK = other.m_intermal_index_tildeK;
+    }
+
+    public Force Clone()
+    {
+        return new Force(this);
+    }
 
     virtual public void addEnergyToTotal(in VectorXs x, in VectorXs v, in VectorXs m, double E) { }
 
@@ -33,27 +50,27 @@ abstract public class Force
         ref VectorXs lambda_v, ref TripletXs J, ref TripletXs Jv, ref TripletXs Jxv, ref TripletXs tildeK, ref TripletXs stiffness,
         ref TripletXs damping, ref VectorXs Phi, ref VectorXs Phiv, in double dt) { }
 
-    abstract public int numConstraintPos();
+    virtual public int numConstraintPos() { return 0; }
 
-    abstract public int numConstraintVel();
+    virtual public int numConstraintVel() { return 0; }
 
-    abstract public int numJ();
+    virtual public int numJ() { return 0; }
 
-    abstract public int numJv();
+    virtual public int numJv() { return 0; }
 
-    abstract public int numJxv();
+    virtual public int numJxv() { return 0; }
 
-    abstract public int numTildeK();
+    virtual public int numTildeK() { return 0; }
 
-    abstract public bool isParallelized();
+    virtual public bool isParallelized() { return false; }
 
-    abstract public bool isPrecomputationParallelized();
+    virtual public bool isPrecomputationParallelized() { return false; }
 
-    abstract public string name();
+    virtual public string name() { return ""; }
 
-    abstract public void getAffectedVars(int pidx, ref HashSet<int> vars);
+    virtual public void getAffectedVars(int pidx, ref HashSet<int> vars) { }
 
-    abstract public bool isContained(int pidx);
+    virtual public bool isContained(int pidx) { return false; }
 
 
     virtual public void preCompute(in VectorXs x, in VectorXs v, in VectorXs m, in double dt) { }
