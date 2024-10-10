@@ -17,6 +17,40 @@ public class CMath
     {
         return x * x * x;
     }
+
+    public static double lerp(double v0, double v1, double t)
+    {
+        return v0 + t * (v1 - v0);
+    }
+
+    public static int bipart_closest(in VectorXs v, double val)
+    {
+        List<double> buff = new List<double>(v.size());
+        for (int i = 0; i < v.size(); i++)
+        {
+            buff[i] = v[i];
+        }
+        buff.Sort();
+
+        int low = 0;
+        int high = buff.Count;
+
+        while (low < high)
+        {
+            int mid = (low + high) / 2;
+
+            if (buff[mid] < val)
+                low = mid + 1;
+            else
+                high = mid;
+        }
+
+        if (low >= v.size())
+        {
+            return v.size() - 1;
+        }
+        return low;
+    }
 }
 
 public class VectorXs
@@ -413,6 +447,24 @@ public class MatrixXs
             v[j] = data[i, j];
         }
         return v;
+    }
+
+    public VectorXs col(int i)
+    {
+        VectorXs v = new VectorXs(i);
+        for (int j = 0; j < rows; j++)
+        {
+            v[j] = data[j, i];
+        }
+        return v;
+    }
+
+    public void resize(int rows, int cols)
+    {
+        this.rows = rows;
+        this.cols = cols;
+        data = new double[rows, cols];
+        setZero();
     }
 }
 

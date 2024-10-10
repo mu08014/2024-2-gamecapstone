@@ -1,8 +1,11 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Runtime.InteropServices;
 using System.Threading;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public class PolygonalRegion
 {
@@ -172,5 +175,49 @@ public class PolygonalCohesion : Force
         m_sorter = null;
         m_use_decoupled_force = false;
         m_compute_particle_poe_mapping = true;
+        m_min_cohesion_table = null;
+        m_max_cohesion_table = null;
+        m_sorter = new Sorter(0, 0, 0);
+
+        /*
+        double gnorm = scene.getSimpleGravity().norm();
+        gnorm = (gnorm == 0.0) ? 1000.0 : gnorm;
+        double max_eta =
+            Math.Sqrt(scene.getLiquidTension() / (scene.getLiquidDensity() * gnorm)) *
+            0.5;
+        double sigma = scene.getLiquidTension();
+        double theta = scene.getLiquidTheta();
+
+        const int disc = 256;
+
+        if (m_parent.getNumParticles() > 0)
+        {
+            const WetHairParameter parameter = scene.getParameter();
+
+            double max_rad = scene.getRadii().maxCoeff();
+            double min_rad = scene.getRadii().minCoeff();
+            m_min_cohesion_table = new CohesionTable(
+            parameter.radius_multiplier, parameter.collision_stiffness,
+            parameter.radius_multiplier_planar,
+                parameter.collision_stiffness_planar);
+            m_max_cohesion_table = new CohesionTable(
+            parameter.radius_multiplier, parameter.collision_stiffness,
+            parameter.radius_multiplier_planar,
+                parameter.collision_stiffness_planar);
+
+            m_min_cohesion_table.setParameter(sigma, theta, min_rad, max_eta * 2.0,
+                                               disc);
+
+            m_max_cohesion_table.setParameter(sigma, theta, max_rad, max_eta * 2.0,
+                                               disc);
+
+            Debug.Log("[construct adhesive/repulsive table]");
+            m_min_cohesion_table.construct_alpha_table();
+            m_max_cohesion_table.construct_alpha_table();
+
+            m_min_cohesion_table.construct_planar_alpha_table();
+            m_max_cohesion_table.construct_planar_alpha_table();
+        }
+        */
     }
 }
