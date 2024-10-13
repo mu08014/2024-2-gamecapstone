@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 
@@ -59,9 +60,18 @@ public abstract class DependencyBase
 public abstract class DependencyNode<ValueT> : DependencyBase
 {
     protected ValueT m_value;
+    protected ushort m_firstValidIndex;
+    protected ushort m_size;
+
     public DependencyNode(ValueT value)
     {
         m_value = value;
+    }
+
+    public DependencyNode(ushort firstValidIndex, ushort size)
+    {
+        m_firstValidIndex = firstValidIndex;
+        m_size = size;
     }
 
     public virtual ValueT get()
@@ -84,4 +94,6 @@ public abstract class DependencyNode<ValueT> : DependencyBase
     {
         setDirtyWithoutPropagating();
     }
+
+    public ushort size() { return m_size; }
 }

@@ -139,6 +139,17 @@ public class VectorXs
             }
         }
     }
+
+    public VectorXs Clone()
+    {
+        VectorXs result = new VectorXs(Size);
+        for (int i = 0; i < Size; i++)
+        {
+            result[i] = elements[i];
+        }
+
+        return result;
+    }
 }
 
 public class VectorXi
@@ -215,7 +226,6 @@ public class TripletXs
 
 public class Vectors //<DIM>으로 구현되어 있는거 클래스 변수로 바꿈
 {
-    private int now;
     public int DIM;
     private double[] values;
 
@@ -223,7 +233,6 @@ public class Vectors //<DIM>으로 구현되어 있는거 클래스 변수로 바꿈
     {
         DIM = dim;
         values = new double[dim];
-        now = 0;
     }
 
     public double this[int index]
@@ -268,6 +277,53 @@ public class Vectors //<DIM>으로 구현되어 있는거 클래스 변수로 바꿈
         return result;
     }
 
+    public static Vectors operator *(double b, Vectors a)
+    {
+        Vectors result = new Vectors(a.DIM);
+        for (int i = 0; i < a.DIM; i++)
+        {
+            result[i] = a[i] * b;
+        }
+        return result;
+    }
+
+    public static Vectors operator /(Vectors a, double b)
+    {
+        Vectors result = new Vectors(a.DIM);
+        for (int i = 0; i < a.DIM; i++)
+        {
+            result[i] = a[i] / b;
+        }
+        return result;
+    }
+
+    public double dot(Vectors a)
+    {
+        double result = 0;
+        for (int i = 0; i < DIM; i++)
+        {
+            result += values[i] * a[i];
+        }
+        return result;
+    }
+
+    public void setZero()
+    {
+        for (int i = 0; i < DIM; i++)
+            values[i] = 0;
+    }
+
+    public double norm()
+    {
+        double result = 0;
+        for (int i = 0; i < DIM; i++)
+        {
+            result += values[i] * values[i];
+        }
+        result = Math.Sqrt(result);
+        return result;
+    }
+
     public Vectors normalized()
     {
         double sum = 0;
@@ -286,6 +342,16 @@ public class Vectors //<DIM>으로 구현되어 있는거 클래스 변수로 바꿈
             }
         }
         return vectors;
+    }
+
+    public Vectors Clone()
+    {
+        Vectors result = new Vectors(DIM);
+        for (int i = 0; i < DIM; i++)
+        {
+            result[i] = values[i];
+        }
+        return result;
     }
 
     public double squaredNorm()

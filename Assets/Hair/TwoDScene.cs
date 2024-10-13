@@ -1,8 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 using UnityEngine;
 using UnityEngine.UIElements;
+using static UnityEngine.ParticleSystem;
 
 struct Script
 {
@@ -308,7 +310,26 @@ public class TwoDScene
         }
     }
 
-    public int getDof(int particle)
+    public StrandParameters getStrandParameters(int index)
+    {
+        return m_strandParameters[index];
+    }
+
+    public bool isTip(int particle)
+    {
+        if (!m_massSpringSim) {
+            return m_is_strand_tip[particle];
+        }
+        return false;
+    }
+
+    public VectorXs getX()
+    {
+        return m_x;
+    }
+
+
+public int getDof(int particle)
     {
         if (m_massSpringSim)
         {
