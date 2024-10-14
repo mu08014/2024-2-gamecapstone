@@ -72,6 +72,9 @@ Shader "Custom/Kajiya"
                     - v.vertex);
 
                 o.color = tex2Dlod(_MainTex, float4(v.uv, 0, 0));
+                //o.color = o.pos;
+
+                //o.pos /= o.pos.w;
 
                 TRANSFER_SHADOW(o);
                 
@@ -82,10 +85,10 @@ Shader "Custom/Kajiya"
             [maxvertexcount(6)] // 각 라인에서 두 개의 삼각형(총 6개의 버텍스)을 생성
             void geom(line v2f input[2], inout TriangleStream<v2f> triStream)
             {
-                float3 cameraRight = normalize(cross(_WorldSpaceCameraPos.xyz - input[0].pos.xyz, float3(0, 1, 0)));
-                float3 offset = float3(1, 0, 0) * _LineWidth;
+                float3 offset = normalize(cross(
+                    normalize(float3(input[0].pos.xy - input[1].pos.xy , 0)), float3(0, 0, -1)
+                    )) * _LineWidth;
                 
-                // 첫 번째 삼각형
                 v2f v0 = input[0];
                 v2f v1 = input[1];
                 v2f v2 = input[0];
@@ -97,7 +100,6 @@ Shader "Custom/Kajiya"
                 triStream.Append(v1);
                 triStream.Append(v2);
 
-                // 두 번째 삼각형
                 v2f v3 = input[1];
                 v2f v4 = input[1];
                 v2f v5 = input[0];
@@ -113,6 +115,7 @@ Shader "Custom/Kajiya"
             float4 frag (v2f i) : SV_Target
             {
                 float diffuse_val = saturate(dot(i.lightDir, i.normal));
+                //diffuse_val = 1;
                 float3 diffuse = i.color;
 
                 float3 halfVec = normalize(i.lightDir + i.cameraDir);
@@ -120,12 +123,10 @@ Shader "Custom/Kajiya"
                     sqrt(1 - dot(i.tangent, halfVec) * dot(i.tangent, halfVec)),
                     _SpecularPower) * _SpecularTerm;
                   
-                float3 embient = i.color * 0.2f;
-
-                float3 color = (diffuse + specular) * diffuse_val  + embient;
-
+                float3 embient = i.color * 0.1f;
+                
                 float shadowAttenuation = SHADOW_ATTENUATION(i);
-                color = color * shadowAttenuation;
+                float3 color = (diffuse + specular) * diffuse_val * shadowAttenuation  + embient;
 
                 return float4(color, 1);
             }
@@ -177,7 +178,8 @@ Shader "Custom/Kajiya"
             ENDCG
         }
 
-                // ShadowCaster Pass 추가
+        /*
+        // ShadowCaster Pass 추가
         Pass
         {
             Name "ShadowCaster"
@@ -241,7 +243,7 @@ Shader "Custom/Kajiya"
                 return float4(0,0,0,1); // 그림자용 검정색 출력
             }
             ENDCG
-        }
+        }*/
 
         UsePass "VertexLit/SHADOWCASTER"
     }

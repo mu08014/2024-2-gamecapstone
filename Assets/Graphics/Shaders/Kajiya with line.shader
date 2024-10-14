@@ -87,18 +87,16 @@ Shader "Custom/KajiyaLine"
                     sqrt(1 - dot(i.tangent, halfVec) * dot(i.tangent, halfVec)),
                     _SpecularPower) * _SpecularTerm;
                   
-                float3 embient = i.color * 0.2f;
-
-                float3 color = (diffuse + specular) * diffuse_val  + embient;
+                float3 embient = i.color * 0.1f;
 
                 float shadowAttenuation = SHADOW_ATTENUATION(i);
-                color = color * shadowAttenuation;
+                float3 color = (diffuse + specular) * diffuse_val * shadowAttenuation + embient;
 
                 return float4(color, 1);
             }
             ENDCG
         }
-
+        /*
         Pass
         {
             Tags { "LightMode" = "ShadowCaster" }
@@ -208,7 +206,7 @@ Shader "Custom/KajiyaLine"
                 return float4(0,0,0,1); // 그림자용 검정색 출력
             }
             ENDCG
-        }
+        }*/
 
         UsePass "VertexLit/SHADOWCASTER"
     }
