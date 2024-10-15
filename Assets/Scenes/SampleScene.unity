@@ -227,7 +227,7 @@ GameObject:
   - component: {fileID: 801611893}
   - component: {fileID: 801611894}
   m_Layer: 0
-  m_Name: Hair
+  m_Name: HairInterface
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -242,7 +242,7 @@ Transform:
   m_GameObject: {fileID: 801611892}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -4.314899, y: 0.90953267, z: 1.5600785}
+  m_LocalPosition: {x: -4.314899, y: 0.90953267, z: 2.25}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -257,7 +257,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 801611892}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cf200063c743be546a502b6a255a1aae, type: 3}
+  m_Script: {fileID: 11500000, guid: a84180451fe297849b0d40267b7b0b0e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &963194225

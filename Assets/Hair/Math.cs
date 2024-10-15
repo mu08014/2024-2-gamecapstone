@@ -56,7 +56,7 @@ public class CMath
 public class VectorXs
 {
     private List<double> elements;
-    private int Size => elements.Count;
+    public int Size => elements.Count;
 
     public VectorXs()
     {
@@ -65,11 +65,7 @@ public class VectorXs
 
     public VectorXs(int size)
     {
-        elements = new List<double>(size);
-        for (int i = 0; i < size; i++)
-        {
-            elements[i] = 0;
-        }
+        elements = new List<double>(new double[size]);
     }
 
     public double this[int index]
@@ -91,6 +87,26 @@ public class VectorXs
         return result;
     }
 
+    public static VectorXs operator *(double a, VectorXs b)
+    {
+        VectorXs result = new VectorXs(b.Size);
+        for (int i = 0; i < b.Size; i++)
+        {
+            result[i] = a * b[i];
+        }
+        return result;
+    }
+
+    public static VectorXs operator *(VectorXs b, double a)
+    {
+        VectorXs result = new VectorXs(b.Size);
+        for (int i = 0; i < b.Size; i++)
+        {
+            result[i] = a * b[i];
+        }
+        return result;
+    }
+
     public int size()
     {
         return elements.Count;
@@ -98,16 +114,19 @@ public class VectorXs
 
     public void resize(int size)
     {
-        List<double> values = new List<double>(size);
-        for (int i = 0; i < size; i++)
+        List<double> values = new List<double>(Size);
+        for (int i = 0; i < Size; i++)
         {
-            values[i] = elements[i];
+            values.Add(elements[i]);
         }
 
         elements = new List<double>(size);
         for (int i = 0; i < size; i++)
         {
-            elements[i] = values[i];
+            if (i < values.Count)
+                elements.Add(values[i]);
+            else
+                elements.Add(0);
         }
     }
 
@@ -138,6 +157,16 @@ public class VectorXs
                 elements[i] = v[i - start];
             }
         }
+    }
+
+    public Vectors ToVectors()
+    {
+        Vectors result = new Vectors(Size);
+        for (int i = 0; i < Size; i++)
+        {
+            result[i] = elements[i];
+        }
+        return result;
     }
 
     public VectorXs Clone()
@@ -178,6 +207,69 @@ public class VectorXi
         {
             result[i] = a[i] + b[i];
         }
+        return result;
+    }
+
+    public void SetSegment(int start, int n, VectorXi v)
+    {
+        if (v.Size != n)
+            throw new System.Exception("벡터의 크기가 다릅니다.");
+        for (int i = start; i < start + n; i++)
+        {
+            if (i >= elements.Count)
+            {
+                elements.Add(elements[i]);
+            }
+            else
+            {
+                elements[i] = v[i - start];
+            }
+        }
+    }
+
+    public VectorXi segment(int start, int n)
+    {
+        VectorXi vectors = new VectorXi(n);
+        for (int i = start; i < start + n; i++)
+        {
+            vectors[i - start] = elements[i];
+        }
+        return vectors;
+    }
+
+    public VectorXi setConstant(int value)
+    {
+        for (int i = 0; i < Size; i++)
+        {
+            elements[i] = value;
+        }
+        return this;
+    }
+
+    public void conservativeResize(int size)
+    {
+        int currentSize = elements.Count;
+
+        if (size > currentSize)
+        {
+            // 크기가 증가하는 경우, 부족한 부분을 0으로 채움
+            elements.AddRange(new int[size - currentSize]);
+        }
+        else if (size < currentSize)
+        {
+            // 크기가 감소하는 경우, 요소를 잘라냄
+            elements.RemoveRange(size, currentSize - size);
+        }
+    }
+
+    public VectorXi Clone()
+    {
+        VectorXi result = new VectorXi(Size);
+        for (int i = 0; i < Size; i++)
+        {
+            result[i] = elements[i];
+        }
+
         return result;
     }
 }
@@ -362,6 +454,15 @@ public class Vectors //<DIM>으로 구현되어 있는거 클래스 변수로 바꿈
             sum += values[i] * values[i];
         }
         return sum;
+    }
+
+    public Vectors setConstant(double value)
+    {
+        for (int i = 0;i < DIM;i++)
+        {
+            values[i] = value;
+        }
+        return this;
     }
 
 }

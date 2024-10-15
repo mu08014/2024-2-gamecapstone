@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -68,9 +69,9 @@ public struct StartState
 
 public class StrandForce : Force
 {
-    private List<int> m_verts;  // in order root to tip
+    public List<int> m_verts;  // in order root to tip
     private int m_globalIndex;         // Global index amongst the hairs
-    private StrandParameters m_strandParams;
+    public StrandParameters m_strandParams;
     private TwoDScene m_scene;
     private bool m_requiresExactForceJacobian;
 
@@ -90,14 +91,14 @@ public class StrandForce : Force
     private StartState m_startState;    // current state
 
     //// Rest shape //////////////////////////////////////////////////////
-    private List<double>
+    public List<double>
         m_restLengths;  // The following four members depend on m_restLengths,
                         // which is why updateEverythingThatDependsOnRestLengths()
                         // must be called
     private double m_totalRestLength;
     private List<double> m_VoronoiLengths;     // rest length around each vertex
     private List<double> m_invVoronoiLengths;  // their inverses
-    private List<double> m_vertexMasses;
+    public List<double> m_vertexMasses;
     private List<Vectors> m_restKappas;
     private List<double> m_restTwists;
 
@@ -105,7 +106,7 @@ public class StrandForce : Force
         in List<int> consecutiveStrandVertices,
         in int parameterIndex, int globalIndex)
     {
-        m_verts = consecutiveStrandVertices;
+        m_verts = new List<int>(consecutiveStrandVertices.ToArray());
         m_globalIndex = globalIndex;
         m_strandParams = null;
         m_scene = scene;
@@ -115,25 +116,24 @@ public class StrandForce : Force
         m_strandState = new StrandState();
         m_startState = new StartState();
         m_strandParams = m_scene.getStrandParameters(parameterIndex);
-
-        VectorXs initDoFs = new VectorXs(getNumVertices() * 4 - 1);
+        VectorXs initDoFs = new VectorXs(getNumVertices() * 3);
         for (int i = 0; i < getNumVertices(); ++i)
         {
-            if (m_scene.isTip(m_verts[i]))
-                initDoFs.SetSegment(i * 4, 3,
-                    m_scene.getX().segment(m_scene.getDof(m_verts[i]), 3));
-            else
-                initDoFs.SetSegment(i * 4, 4,
-                    m_scene.getX().segment(m_scene.getDof(m_verts[i]), 4));
+             initDoFs.SetSegment(i * 3, 3,
+                 m_scene.getX().segment(m_scene.getDof(m_verts[i]), 3));
         }
         var bendingMatirxBase = m_strandParams.getBendingMatrixBase();
         m_strandState =
             new StrandState(initDoFs, ref bendingMatirxBase);
         m_startState = new StartState(initDoFs);
-
         resizeInternals();
         //freezeRestShape(
         //    0, getNumEdges());
+    }
+
+    public List<Vectors> alterRestKappas()
+    {
+        return m_restKappas;
     }
 
     public int getNumVertices() { return m_verts.Count; }
@@ -142,12 +142,12 @@ public class StrandForce : Force
 
     public void resizeInternals()
     {
-        m_restLengths.Capacity = getNumEdges();
-        m_restKappas.Capacity = getNumEdges();
-        m_restTwists.Capacity = getNumEdges();
-        m_vertexMasses.Capacity = getNumVertices();
-        m_VoronoiLengths.Capacity = getNumVertices();
-        m_invVoronoiLengths.Capacity = getNumVertices();
+        m_restLengths = new List<double>(new double[getNumEdges()]);
+        m_restKappas = new List<Vectors> (new Vectors[getNumEdges()]);
+        m_restTwists = new List<double>(new double[getNumEdges()]);
+        m_vertexMasses = new List<double>(new double[getNumVertices()]);
+        m_VoronoiLengths = new List<double>(new double[getNumVertices()]);
+        m_invVoronoiLengths = new List<double>(new double[getNumVertices()]);
     }
 
     public void updateEverythingThatDependsOnRestLengths()

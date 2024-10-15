@@ -10,7 +10,7 @@ public abstract class DependencyBase
 
     private bool m_dirty;
 
-    protected List<DependencyBase> m_dependents;
+    protected List<DependencyBase> m_dependents = new List<DependencyBase>();
    
     protected void setDirtyWithoutPropagating()
     {
