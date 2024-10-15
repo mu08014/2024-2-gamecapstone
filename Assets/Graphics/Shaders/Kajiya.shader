@@ -86,9 +86,9 @@ Shader "Custom/Kajiya"
             void geom(line v2f input[2], inout TriangleStream<v2f> triStream)
             {
                 float3 offset = normalize(cross(
-                    normalize(float3(input[0].pos.xy - input[1].pos.xy , 0)), float3(0, 0, -1)
+                    normalize(float3(input[0].pos.xy / input[0].pos.w - input[1].pos.xy / input[1].pos.w , 0)), float3(0, 0, -1)
                     )) * _LineWidth;
-                
+
                 v2f v0 = input[0];
                 v2f v1 = input[1];
                 v2f v2 = input[0];

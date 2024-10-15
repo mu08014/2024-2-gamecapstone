@@ -396,7 +396,7 @@ Transform:
   m_GameObject: {fileID: 376476833}
   serializedVersion: 2
   m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 0, y: 3, z: 0}
+  m_LocalPosition: {x: -4.74, y: 3, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -518,7 +518,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 15f4abbffafa17146b49d4438ce2f2b2, type: 3}
       propertyPath: m_LocalScale.x
-      value: 1
+      value: 1.4864
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 15f4abbffafa17146b49d4438ce2f2b2, type: 3}
       propertyPath: m_LocalScale.y
@@ -530,11 +530,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 15f4abbffafa17146b49d4438ce2f2b2, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: 2.52
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 15f4abbffafa17146b49d4438ce2f2b2, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 5.12
+      value: 6.38
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 15f4abbffafa17146b49d4438ce2f2b2, type: 3}
       propertyPath: m_LocalPosition.z
@@ -717,7 +717,7 @@ MonoBehaviour:
   NoisePower: 0.1
   _furmeshprefab: {fileID: 5963670404148264112, guid: 76d5dc2f9c4595243b2975e6462b282d, type: 3}
   _furmaterial: {fileID: 2100000, guid: 44c5767b2ab58c64d8125e09ae83f1a0, type: 2}
-  _lengthTexture: {fileID: 0}
+  _lengthTexture: {fileID: 2800000, guid: d783bc61e11b4a04f80eee9da672acde, type: 3}
 --- !u!1 &1245270239
 GameObject:
   m_ObjectHideFlags: 0
@@ -956,7 +956,7 @@ MonoBehaviour:
   NoisePower: 0.1
   _furmeshprefab: {fileID: 5963670404148264112, guid: 76d5dc2f9c4595243b2975e6462b282d, type: 3}
   _furmaterial: {fileID: 2100000, guid: 9b649916b06297f4f8cd5f2ebd38b0dd, type: 2}
-  _lengthTexture: {fileID: 0}
+  _lengthTexture: {fileID: 2800000, guid: 25e080b6621ac134eac9d0231c222b6f, type: 3}
 --- !u!1 &2099282483
 GameObject:
   m_ObjectHideFlags: 0
