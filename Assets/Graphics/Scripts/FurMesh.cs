@@ -49,21 +49,14 @@ public class FurMesh : MonoBehaviour
         _hairs.Clear();
     }
 
-    private List<Vector3> tangets = new();
-    private List<Vector2> uvs = new();
-    private List<Vector3> normals = new();
-    private List<Vector3> positions = new();
-    private List<int> indices = new();
-
     public void UpdateMesh()
     {
-        Mesh mesh = meshFilter.mesh;
-        mesh.Clear();
-        tangets.Clear();
-        uvs.Clear();
-        normals.Clear();
-        positions.Clear();
-        indices.Clear();
+        Mesh mesh = new();
+        List<Vector3> tangets = new();
+        List<Vector2> uvs = new();
+        List<Vector3> normals = new();
+        List<Vector3> positions = new();
+        List<int> indices = new();
 
         foreach (Hair hair in _hairs)
         {
@@ -95,7 +88,6 @@ public class FurMesh : MonoBehaviour
         mesh.SetUVs(2, normals.ToArray());
         mesh.SetIndices(indices.ToArray(), MeshTopology.Lines, 0);
         mesh.RecalculateBounds();
-        //meshFilter.mesh.Clear();
-        //meshFilter.mesh = mesh;
+        meshFilter.mesh = mesh;
     }
 }

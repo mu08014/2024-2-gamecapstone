@@ -12,11 +12,8 @@ public class AddFur : MonoBehaviour
 
     [Tooltip("Length of generated hairs")]
     public float Length = 1.0f;
-    public float NoisePower = 0.1f;
 
     [SerializeField] GameObject _furmeshprefab;
-    [SerializeField] Material _furmaterial;
-    [SerializeField] Texture2D _lengthTexture;
     private FurMesh _furmesh;
     private MeshFilter _mesh;
 
@@ -24,7 +21,6 @@ public class AddFur : MonoBehaviour
     {
         _mesh = GetComponent<MeshFilter>();
         _furmesh = Instantiate(_furmeshprefab, transform).GetComponent<FurMesh>();
-        _furmesh.GetComponent<MeshRenderer>().material = _furmaterial;
         initMesh();
     }
 
@@ -52,16 +48,8 @@ public class AddFur : MonoBehaviour
     void MakeFur(int level, Vertex v1, Vertex v2, Vertex v3)
     {
         var av = (v1 + v2 + v3) / 3;
-
-        var noiseLength = 0.0f;
-        if (_lengthTexture != null)
-            noiseLength = (_lengthTexture.GetPixelBilinear(av.uv.x, av.uv.y).r - 0.5f) * NoisePower;
-
         _furmesh.AddHair(new FurMesh.Hair(
-            new List<Vector3> { 
-                av.position, 
-                av.position + av.normal * (Length + noiseLength) },
-            av.normal, av.uv));
+            new List<Vector3> { av.position, av.position + av.normal * Length }, av.normal, av.uv));
 
         if (level < Iter)
         {
