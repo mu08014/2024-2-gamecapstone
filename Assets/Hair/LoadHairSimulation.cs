@@ -55,14 +55,13 @@ public class LoadHairSimulation
         scene.resizeSystem(numparticles, numedges, numstrands);
         List<int> vert_to_dof = new List<int>(numparticles); 
         vert_to_dof.AddRange(new int[numparticles]);
-        VectorXi dofVars = new VectorXi(numparticles * 3 - numstrands + 1);
-        VectorXi dofVerts = new VectorXi(numparticles * 3 - numstrands + 1);
-        VectorXi dofs = new VectorXi(3);
+        VectorXi dofVars = new VectorXi(numparticles * 4 - numstrands + 1);
+        VectorXi dofVerts = new VectorXi(numparticles * 4 - numstrands + 1);
+        VectorXi dofs = new VectorXi(4);
 
         List<bool> tipVerts = new List<bool>(numparticles);
         tipVerts.AddRange(new bool[numparticles]);
-        
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < 4; i++)
         {
             dofs[i] = i;
         }
@@ -72,16 +71,16 @@ public class LoadHairSimulation
         {
             for (int j = 0; j < i; j++)
             {
-                dofVars.SetSegment(dof, 3, dofs);
-                dofVerts.SetSegment(dof, 3, dofVerts.segment(dof, 3).setConstant(numparticles));
+                dofVars.SetSegment(dof, 4, dofs);
+                dofVerts.SetSegment(dof, 4, dofVerts.segment(dof, 4).setConstant(numparticles));
                 vert_to_dof[numparticles++] = dof;
-                dof += 3;
+                dof += 4;
             }
             --dof;
             tipVerts[numparticles - 1] = true;
         }
-        dofVars.conservativeResize(numparticles * 3 - numstrands);
-        dofVerts.conservativeResize(numparticles * 3 - numstrands);
+        dofVars.conservativeResize(numparticles * 4 - numstrands);
+        dofVerts.conservativeResize(numparticles * 4 - numstrands);
         scene.setVertToDoFMap(vert_to_dof, dofVars, tipVerts, dofVerts);
         List<VectorXs> particle_pos = new List<VectorXs>();
         VectorXs pos = new VectorXs(3);
@@ -92,7 +91,6 @@ public class LoadHairSimulation
 
         List<List<int>> particle_indices_vec = new List<List<int>>();
         List<List<double>> particle_eta_vec = new List<List<double>>();
-
         foreach(var hair in GameObject.Find("HairInterface").GetComponent<HairInterface>().Hairs)
         {
             List<double> particle_eta = new List<double>();
@@ -109,6 +107,7 @@ public class LoadHairSimulation
                 pos[0] = hairparticle.GetComponent<HairParticle>().Position.x;
                 pos[1] = hairparticle.GetComponent<HairParticle>().Position.y;
                 pos[2] = hairparticle.GetComponent<HairParticle>().Position.z;
+
                 scene.setPosition(vtx, pos.ToVectors());
                 particle_pos.Add(pos);
 

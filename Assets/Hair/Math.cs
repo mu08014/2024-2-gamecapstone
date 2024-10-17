@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Numerics;
 using System.Xml.Linq;
 using Unity.VisualScripting;
@@ -244,6 +245,13 @@ public class VectorXi
             elements[i] = value;
         }
         return this;
+    }
+
+    public void resize(int size)
+    {
+        Debug.Log("?");
+        elements = new List<int>(new int[size]);
+        Debug.Log("??");
     }
 
     public void conservativeResize(int size)
