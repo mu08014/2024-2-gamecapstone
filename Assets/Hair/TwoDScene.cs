@@ -195,7 +195,7 @@ public class TwoDScene
     private VectorXs m_fluid_drag_buffer = new VectorXs();
 
     private List<int> m_particle_to_dofs = new List<int>();
-    private VectorXi m_dofs_to_component;
+    private VectorXi m_dofs_to_component = new VectorXi(0);
     private List<bool> m_is_strand_tip;
     private VectorXi m_dofs_to_particle;
     private List<StrandForce> m_strands;
@@ -394,29 +394,31 @@ public class TwoDScene
 
     public void resizeSystem(int num_particles, int num_edges, int num_strands)
     {
-        m_script_group = new List<int>(num_particles);
-        m_script_group.AddRange(new int[num_particles]);
-        m_fluid_drag_buffer.resize(DIM * num_particles);
-        m_x.resize(DIM * num_particles);
-        m_base_x.resize(DIM * num_particles);
-        m_v.resize(DIM * num_particles);
-        m_m.resize(DIM * num_particles);
-        m_interpolated_m.resize(DIM * num_particles);
-        m_rest_m.resize(DIM * num_particles);
-        m_fixed = new List<byte>(num_particles);
-        m_fixed.AddRange(new byte[num_particles]);
+        int numDofs = (4 * num_particles) - num_strands;
+        m_fluid_drag_buffer.resize(numDofs);
+        m_x.resize(numDofs);
+        m_base_x.resize(numDofs);
+        m_v.resize(numDofs);
+        m_m.resize(numDofs);
+        m_interpolated_m.resize(numDofs);
+        m_rest_m.resize(numDofs);
+
+        m_script_group = new List<int>(new int[num_particles]);
+        m_particle_to_dofs = new List<int>(new int[num_particles]);
+        m_dofs_to_component.resize(numDofs);
+        m_is_strand_tip = new List<bool>(new bool[num_particles]);
+
+        m_fixed = new List<byte>(new byte[num_particles]);
         m_radii.resize(num_particles);
-        m_particle_tags = new List<string>(num_particles);
-        m_particle_tags.AddRange(new string[num_particles]);
-        m_edges = new List<Tuple<int, int>>(num_edges);
-        m_edges.AddRange(new Tuple<int, int>[num_edges]);
+        m_particle_tags = new List<string>(new string[num_particles]);
+        m_edges = new List<Tuple<int, int>>(new Tuple<int, int>[num_edges]);
         m_edge_radii.resize(num_edges);
         m_edge_rest_radii.resize(num_edges);
         m_edge_rest_length.resize(num_edges);
         m_edge_poisson_ratio.resize(num_edges);
-        m_particle_to_edge = new List<List<int>>(num_particles);
-        m_particle_to_edge.AddRange(new List<int>(num_particles));
+        m_particle_to_edge = new List<List<int>>(new List<int>[num_particles]);
         m_num_strands = num_strands;
+        m_edge_to_hair = new List<int>(new int[num_edges]);
     }
 
     public void setVertToDoFMap(in List<int> vert_to_dof,

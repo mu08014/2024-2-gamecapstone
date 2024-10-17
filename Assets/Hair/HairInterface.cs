@@ -23,12 +23,10 @@ public class HairInterface : MonoBehaviour
 
         LoadHairSimulation loadHairSimulation = new LoadHairSimulation();
         loadHairSimulation.loadDERSimulation();
-        Debug.Log("0");
-        VectorXs v = loadHairSimulation.scene.getX().Clone();
-        Debug.Log("0");
-        for (int i = 0; i < v.Size; i += 3)
+        for (int i = 0; i < hairs.Count * hairs[0].Count; i++)
         {
-            Debug.Log("x: " + v[i].ToString() + ", y: " + v[i + 1].ToString() + ", z: " + v[i + 2].ToString());
+            Vectors v = loadHairSimulation.scene.getPosition(i).Clone();
+            Debug.Log("x: " + v[0].ToString() + " y: " + v[1].ToString() + " z: " + v[2].ToString());
         }
     }
 
