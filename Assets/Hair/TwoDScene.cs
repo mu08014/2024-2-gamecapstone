@@ -1,10 +1,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.UIElements;
 
-struct Script
+public struct Script
 {
     enum TARGET
     {
@@ -55,7 +57,7 @@ struct Script
     List<double> base_vertices;
 }
 
-enum MASS_UPDATE_MODE
+public enum MASS_UPDATE_MODE
 {
     MUM_NONE,
     MUM_MASS_ONLY,
@@ -64,7 +66,8 @@ enum MASS_UPDATE_MODE
     MUM_COUNT
 }
 
-class WetHairParameter
+//[Serializable]
+public class WetHairParameter
 {
     public double dt;
     public double rho;
@@ -124,7 +127,7 @@ class WetHairParameter
     public const int MUM_MOMENTUM = 3;
 
     public WetHairParameter()
-    {
+    { 
         dt = 0.004;
         rho = 1.0;
         sigma = 72.0;
@@ -185,13 +188,13 @@ public class TwoDScene
     private VectorXs m_x;
     private VectorXs m_v;
     private VectorXs m_m;
-    private VectorXs m_rest_m;
+    private VectorXs m_rest_m = new VectorXs();
     private VectorXs m_radii;
     private VectorXs m_interpolated_m;
 
-    private VectorXs m_fluid_drag_buffer;
+    private VectorXs m_fluid_drag_buffer = new VectorXs();
 
-    private List<int> m_particle_to_dofs;
+    private List<int> m_particle_to_dofs = new List<int>();
     private VectorXi m_dofs_to_component;
     private List<bool> m_is_strand_tip;
     private VectorXi m_dofs_to_particle;
@@ -216,9 +219,9 @@ public class TwoDScene
 
     private List<Tuple<int, int>> m_edges;
     private VectorXs m_edge_radii;
-    private VectorXs m_edge_rest_radii;
-    private VectorXs m_edge_rest_length;
-    private VectorXs m_edge_poisson_ratio;
+    private VectorXs m_edge_rest_radii = new VectorXs();
+    private VectorXs m_edge_rest_length = new VectorXs();
+    private VectorXs m_edge_poisson_ratio = new VectorXs();
 
     private List<Force> m_forces;
     private List<Force> m_external_forces;
@@ -229,7 +232,7 @@ public class TwoDScene
 
     private List<int> m_particle_to_hairs;
 
-    private List<int> m_script_grout;
+    private List<int> m_script_group;
 
     private List<VectorXs> m_scripted_translate;
 
@@ -239,14 +242,14 @@ public class TwoDScene
 
     private List<HairFlow> m_flows;
 
-    private List<List<int>> m_particle_to_edge;
+    private List<List<int>> m_particle_to_edge = new List<List<int>>();
 
-    private List<HashSet<int>> m_bp_edge_edge_pairs;
-    private List<HashSet<int>> m_bp_particle_edge_pairs;
-    private List<HashSet<int>> m_bp_particle_particle_pairs;
+    private List<HashSet<int>> m_bp_edge_edge_pairs = new List<HashSet<int>>();
+    private List<HashSet<int>> m_bp_particle_edge_pairs = new List<HashSet<int>>();
+    private List<HashSet<int>> m_bp_particle_particle_pairs = new List<HashSet<int>>();
 
-    private List<StrandParameters> m_strandParameters;
-    private List<StrandEquilibriumParameters> m_strandEquilibriumParameters;
+    private List<StrandParameters> m_strandParameters = new List<StrandParameters>();
+    private List<StrandEquilibriumParameters> m_strandEquilibriumParameters = new List<StrandEquilibriumParameters>();
 
     private bool m_massSpringSim;
 
@@ -264,7 +267,7 @@ public class TwoDScene
 
     private WetHairParameter m_parameters;
 
-    public int DIM;
+    public int DIM = 3;
 
     public TwoDScene(in bool isMassSpring)
     {
@@ -283,6 +286,7 @@ public class TwoDScene
         m_fluid_sim = null;
         m_polygonal_cohesion = null;
         m_massSpringSim = isMassSpring;
+        m_parameters = new WetHairParameter();
     }
 
     public TwoDScene(in TwoDScene otherscene, in bool isMassSpring)
@@ -307,6 +311,25 @@ public class TwoDScene
             m_forces[i] = otherscene.m_forces[i].Clone();
         }
     }
+
+    public StrandParameters getStrandParameters(int index)
+    {
+        return m_strandParameters[index];
+    }
+
+    public bool isTip(int particle)
+    {
+        if (!m_massSpringSim) {
+            return m_is_strand_tip[particle];
+        }
+        return false;
+    }
+
+    public VectorXs getX()
+    {
+        return m_x;
+    }
+
 
     public int getDof(int particle)
     {
@@ -352,5 +375,207 @@ public class TwoDScene
     public double getLiquidDensity()
     {
         return m_parameters.rho;
+    }
+
+    public void insertForce(ref Force newForce)
+    {
+        m_forces.Add(newForce);
+    }
+
+    public void insertStrandParameters(ref StrandParameters newparams)
+    {
+        m_strandParameters.Add(newparams);
+    }
+
+    public void insertStrandEquilibriumParameters(ref StrandEquilibriumParameters newparams)
+    {
+        m_strandEquilibriumParameters.Add(newparams);
+    }
+
+    public void resizeSystem(int num_particles, int num_edges, int num_strands)
+    {
+        m_script_group = new List<int>(num_particles);
+        m_script_group.AddRange(new int[num_particles]);
+        m_fluid_drag_buffer.resize(DIM * num_particles);
+        m_x.resize(DIM * num_particles);
+        m_base_x.resize(DIM * num_particles);
+        m_v.resize(DIM * num_particles);
+        m_m.resize(DIM * num_particles);
+        m_interpolated_m.resize(DIM * num_particles);
+        m_rest_m.resize(DIM * num_particles);
+        m_fixed = new List<byte>(num_particles);
+        m_fixed.AddRange(new byte[num_particles]);
+        m_radii.resize(num_particles);
+        m_particle_tags = new List<string>(num_particles);
+        m_particle_tags.AddRange(new string[num_particles]);
+        m_edges = new List<Tuple<int, int>>(num_edges);
+        m_edges.AddRange(new Tuple<int, int>[num_edges]);
+        m_edge_radii.resize(num_edges);
+        m_edge_rest_radii.resize(num_edges);
+        m_edge_rest_length.resize(num_edges);
+        m_edge_poisson_ratio.resize(num_edges);
+        m_particle_to_edge = new List<List<int>>(num_particles);
+        m_particle_to_edge.AddRange(new List<int>(num_particles));
+        m_num_strands = num_strands;
+    }
+
+    public void setVertToDoFMap(in List<int> vert_to_dof,
+        in VectorXi dofs_to_vars,
+        in List<bool> tipVerts,
+        in VectorXi dof_to_vert)
+    {
+        m_particle_to_dofs = new List<int>();
+        foreach (int i in vert_to_dof)
+        {
+            m_particle_to_dofs.Add(i);
+        }
+        m_dofs_to_component = dofs_to_vars.Clone();
+        m_is_strand_tip = new List<bool>();
+        foreach (bool b in tipVerts)
+        {
+            m_is_strand_tip.Add(b);
+        }
+        m_dofs_to_particle = dof_to_vert.Clone();
+    }
+
+    public List<string> getParticleTags()
+    {
+        return m_particle_tags;
+    }
+
+    public void setPosition(int particle, in Vectors pos)
+    {
+        m_x.SetSegment(getDof(particle), DIM, pos);
+    }
+
+    public Vectors getPosition(int particle)
+    {
+        return m_x.segment(getDof(particle), DIM);
+    }
+
+    public void setVelocity(int particle, in Vectors vel)
+    {
+        m_v.SetSegment(getDof(particle), DIM, vel);
+    }
+
+    public Vectors getVelocity(int particle)
+    {
+        return m_v.segment(getDof(particle), DIM);
+    }
+
+    public void setMass(int particle, in double mass)
+    {
+        if (m_massSpringSim)
+        {
+            m_m.SetSegment(particle * DIM, DIM, m_m.segment(particle * DIM, DIM).setConstant(mass));
+            m_rest_m.SetSegment(particle * DIM, DIM, m_rest_m.segment(particle * DIM, DIM).setConstant(mass));
+            m_interpolated_m.SetSegment(particle * DIM, DIM, m_interpolated_m.segment(particle * DIM, DIM).setConstant(mass));
+        }
+    }
+
+    public void setFixed(int particle, bool fixe)
+    {
+        if (fixe)
+            m_fixed[particle] = 1;
+        else
+            m_fixed[particle] = 0;
+    }
+
+    public void setEdge(int idx, in Tuple<int, int> edge,
+        double radius)
+    {
+        m_edges[idx] = edge;
+        m_particle_to_edge[edge.Item1].Add(idx);
+        m_particle_to_edge[edge.Item2].Add(idx);
+
+        if (m_massSpringSim)
+        {
+            m_edge_radii[idx] = radius;
+            m_edge_rest_radii[idx] = radius;
+        }
+    }
+
+    public void setEdgeRestLength(int idx, in double l0)
+    {
+        m_edge_rest_length[idx] = l0;
+    }
+
+    public void setScriptedGroup(int particle, int group_idx)
+    {
+        m_script_group[particle] = group_idx;
+    }
+
+    public void computeMassesAndRadiiFromStrands()
+    {
+        m_strands.Capacity = m_num_strands;
+
+        int nStrand = 0;
+        for (int f = 0; f < m_forces.Count(); ++f)
+        {
+            StrandForce strand = (StrandForce)m_forces[f];
+            if (strand == null)
+                continue;
+            m_strands[nStrand] = strand;
+
+            if (strand.m_strandParams.m_straightHairs != 1.0)
+            {
+                List<Vectors> kappas = strand.alterRestKappas();
+                for (int k = 0; k < kappas.Count(); ++k)
+                {
+                    kappas[k] = kappas[k] * strand.m_strandParams.m_straightHairs;
+                }
+            }
+
+            for (int v = 0; v < strand.getNumVertices(); ++v)
+            {
+                int globalVtx = strand.m_verts[v];
+                int globalEdx = globalVtx - nStrand;
+                int globalDof = getDof(globalVtx);
+                double r =
+                    strand.m_strandParams.getRadius(v, strand.getNumVertices());
+
+                m_radii[globalVtx] = r;
+                m_m.SetSegment(globalDof, DIM, m_m.segment(globalDof, DIM).setConstant(strand.m_vertexMasses[v]));
+
+                if (v < strand.getNumEdges())
+                {
+                    m_edge_to_hair[globalEdx] = nStrand;
+                    // Edge radius, edge's should be indexed the same as
+                    m_edge_radii[globalEdx] = r;
+                    m_edge_rest_radii[globalEdx] = r;
+
+                    // Twist Mass (Second moment of inertia * length)
+                    double mass = strand.m_strandParams.m_density * CMath.M_PI * r * r *
+                                        strand.m_restLengths[v];
+                    double vtm = 0.25 * mass * 2 * r * r;
+                    m_m[globalDof + 3] = vtm;
+                }
+            }
+            ++nStrand;
+        }
+
+        m_rest_m = m_m.Clone();
+        m_interpolated_m = m_m.Clone();
+    }
+
+    public List<HairFlow> getFilmFlows()
+    {
+        return m_flows;
+    }
+
+
+    public List<Tuple<int, int>> getEdges()
+    {
+        return m_edges;
+    }
+
+    public double getDt()
+    {
+        return m_parameters.dt;
+    }
+
+    public double getHairSteps()
+    {
+        return m_parameters.hairsteps;
     }
 }

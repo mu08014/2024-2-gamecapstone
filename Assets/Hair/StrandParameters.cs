@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public class StrandEquilibriumParameters
 {
@@ -14,7 +15,7 @@ public class StrandEquilibriumParameters
     public bool m_valid;
     public bool m_dirty;
 
-    StrandEquilibriumParameters(List<VectorXs> vertices, double curl_radius, double curl_density, double dL, double root_length, bool valid)
+    public StrandEquilibriumParameters(List<VectorXs> vertices, double curl_radius, double curl_density, double dL, double root_length, bool valid)
     {
         m_vertices = vertices;
         m_curl_radius = curl_radius;
@@ -51,12 +52,12 @@ public class StrandParameters
     public bool m_variableRadiusHair;
     public double m_straightHairs;
 
-    StrandParameters(double radius, double YoungsModulus, double shearModulus,
-        double stretchingMultiplier, double density,
-        double viscosity, double baseRotation, double dt, Vector3 color,
-        bool accumViscous = true, bool accumViscousBend = true,
-        bool variableRadiusHair = false, double straightHairs = 1
-        )
+    //Color Á¦¿Ü
+    public StrandParameters(double radius, double YoungsModulus, double shearModulus,
+                    double stretchingMultiplier, double density,
+                    double viscosity, double baseRotation, double dt,
+                    bool accumViscous = true, bool accumViscousBend = true,
+                   bool variableRadiusHair = false, double straightHairs = 1)
     {
         m_density = density;
         m_viscosity = viscosity;
@@ -72,7 +73,6 @@ public class StrandParameters
         m_accumulateVisCousOnlyForBendingModes = accumViscousBend;
         m_variableRadiusHair = variableRadiusHair;
         m_straightHairs = straightHairs;
-        m_color = color;
     }
 
     public double interpolatedRadiusMultiplier(int vtx, int numVertices)
