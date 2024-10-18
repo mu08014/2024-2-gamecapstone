@@ -10,15 +10,15 @@ public struct StrandState
     public Edges m_edges;
     public Lengths m_lengths;
     public Tangents m_tangents;
-    //ReferenceFrames1 m_referenceFrames1;
-    //ReferenceFrames2 m_referenceFrames2;
-    //ReferenceTwists m_referenceTwists;
-    //Twists m_twists;
+    public ReferenceFrames1 m_referenceFrames1;
+    public ReferenceFrames2 m_referenceFrames2;
+    public ReferenceTwists m_referenceTwists;
+    public Twists m_twists;
     public CurvatureBinormals m_curvatureBinormals;
     public TrigThetas m_trigThetas;
-    //MaterialFrames m_materialFrames1;
-    //MaterialFrames m_materialFrames2;
-    //Kappas m_kappas;
+    public MaterialFrames1 m_materialFrames1;
+    public MaterialFrames2 m_materialFrames2;
+    public Kappas m_kappas;
     //GradKappas m_gradKappas;
     //GradTwists m_gradTwists;
     //GradTwistsSquared m_gradTwistsSquared;
@@ -33,9 +33,16 @@ public struct StrandState
         m_edges = new Edges(ref m_dofs);
         m_lengths = new Lengths(ref m_edges);
         m_tangents = new Tangents(ref m_edges, ref m_lengths);
-
+        m_referenceFrames1 = new ReferenceFrames1(ref m_tangents);
+        m_referenceFrames2 = new ReferenceFrames2(ref m_tangents, ref m_referenceFrames1);
+        m_referenceTwists = new ReferenceTwists(ref m_tangents, ref m_referenceFrames1);
+        m_twists = new Twists(ref m_referenceTwists, ref m_dofs);
         m_curvatureBinormals = new CurvatureBinormals(ref m_tangents);
         m_trigThetas = new TrigThetas(ref m_dofs);
+        m_materialFrames1 = new MaterialFrames1(ref m_trigThetas, ref m_referenceFrames1, ref m_referenceFrames2);
+        m_materialFrames2 = new MaterialFrames2(ref m_trigThetas, ref m_referenceFrames1, ref m_referenceFrames2);
+        m_twists = new Twists(ref m_referenceTwists, ref m_dofs);
+        m_kappas = new Kappas(ref m_curvatureBinormals, ref m_materialFrames1, ref m_materialFrames2);
     }
 }
 
@@ -45,15 +52,15 @@ public struct StartState
     public Edges m_edges;
     public Lengths m_lengths;
     public Tangents m_tangents;
-    //ReferenceFrames1 m_referenceFrames1;
-    //ReferenceFrames2 m_referenceFrames2;
-    //ReferenceTwists m_referenceTwists;
-    //Twists m_twists;
+    public ReferenceFrames1 m_referenceFrames1;
+    public ReferenceFrames2 m_referenceFrames2;
+    public ReferenceTwists m_referenceTwists;
+    public Twists m_twists;
     public CurvatureBinormals m_curvatureBinormals;
     public TrigThetas m_trigThetas;
-    //MaterialFrames<1> m_materialFrames1;
-    //MaterialFrames<2> m_materialFrames2;
-    //Kappas m_kappas;
+    public MaterialFrames1 m_materialFrames1;
+    public MaterialFrames2 m_materialFrames2;
+    public Kappas m_kappas;
 
     public StartState(in VectorXs initDoFs)
     {
@@ -61,9 +68,16 @@ public struct StartState
         m_edges = new Edges(ref m_dofs);
         m_lengths = new Lengths(ref m_edges);
         m_tangents = new Tangents(ref m_edges, ref m_lengths);
-
+        m_referenceFrames1 = new ReferenceFrames1(ref m_tangents);
+        m_referenceFrames2 = new ReferenceFrames2(ref m_tangents, ref m_referenceFrames1);
+        m_referenceTwists = new ReferenceTwists(ref m_tangents, ref m_referenceFrames1);
+        m_twists = new Twists(ref m_referenceTwists, ref m_dofs);
         m_curvatureBinormals = new CurvatureBinormals(ref m_tangents);
         m_trigThetas = new TrigThetas(ref m_dofs);
+        m_materialFrames1 = new MaterialFrames1(ref m_trigThetas, ref m_referenceFrames1, ref m_referenceFrames2);
+        m_materialFrames2 = new MaterialFrames2(ref m_trigThetas, ref m_referenceFrames1, ref m_referenceFrames2);
+        m_twists = new Twists(ref m_referenceTwists, ref m_dofs);
+        m_kappas = new Kappas(ref m_curvatureBinormals, ref m_materialFrames1, ref m_materialFrames2);
     }
 }
 
@@ -116,10 +130,10 @@ public class StrandForce : Force
         m_strandState = new StrandState();
         m_startState = new StartState();
         m_strandParams = m_scene.getStrandParameters(parameterIndex);
-        VectorXs initDoFs = new VectorXs(getNumVertices() * 3);
+        VectorXs initDoFs = new VectorXs(getNumVertices() * 4 - 1);
         for (int i = 0; i < getNumVertices(); ++i)
         {
-             initDoFs.SetSegment(i * 3, 3,
+             initDoFs.SetSegment(i * 4, 3,
                  m_scene.getX().segment(m_scene.getDof(m_verts[i]), 3));
         }
         var bendingMatirxBase = m_strandParams.getBendingMatrixBase();
@@ -172,6 +186,27 @@ public class StrandForce : Force
                                   m_strandParams.getRadius(vtx, getNumVertices()) *
                                   m_strandParams.getRadius(vtx, getNumVertices());
             m_invVoronoiLengths[vtx] = 1.0 / m_VoronoiLengths[vtx];
+        }
+    }
+
+    public void updateRestShape(in VectorXs dof_restshape, double damping)
+    {
+        StartState restshape_state = new StartState(dof_restshape);
+
+        int nedges = getNumEdges();
+        for (int vtx = 0; vtx < nedges; ++vtx)
+        {  // Fix rest lengths
+            m_restLengths[vtx] = (1 - damping) * restshape_state.m_lengths[vtx] +
+                                 damping * m_restLengths[vtx];
+        }
+        updateEverythingThatDependsOnRestLengths();
+
+        for (int vtx = 0; vtx < nedges; ++vtx)
+        {
+            m_restKappas[vtx] = (1 - damping) * restshape_state.m_kappas[vtx].ToVectors() +
+                                damping * m_restKappas[vtx];
+            m_restTwists[vtx] = (1 - damping) * restshape_state.m_twists[vtx] +
+                                damping * m_restTwists[vtx];
         }
     }
 
@@ -228,5 +263,13 @@ public class StrandForce : Force
     public override int numTildeK()
     {
         throw new System.NotImplementedException();
+    }
+
+    public void updateStartDoFs(in VectorXs x_startOfStep) 
+    {
+        VectorXs currentStrandDoFs = new VectorXs(getNumVertices() * 4 - 1);
+        currentStrandDoFs.SetSegment(0, getNumVertices() * 4 - 1, x_startOfStep.segment(
+        m_scene.getDof(m_verts[0]), getNumVertices() * 4 - 1));
+        m_startState.m_dofs.set(currentStrandDoFs);
     }
 }

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public struct Script
 {
@@ -198,7 +199,7 @@ public class TwoDScene
     private VectorXi m_dofs_to_component = new VectorXi(0);
     private List<bool> m_is_strand_tip;
     private VectorXi m_dofs_to_particle;
-    private List<StrandForce> m_strands;
+    private List<StrandForce> m_strands = new List<StrandForce>();
     private int m_num_strands;
     private List<int> m_edge_to_hair;
 
@@ -215,7 +216,7 @@ public class TwoDScene
 
     private PolygonalCohesion m_polygonal_cohesion;
 
-    private List<byte> m_fixed;
+    private List<bool> m_fixed;
 
     private List<Tuple<int, int>> m_edges;
     private VectorXs m_edge_radii;
@@ -276,7 +277,7 @@ public class TwoDScene
         m_v = new VectorXs();
         m_m = new VectorXs();
         m_interpolated_m = new VectorXs();
-        m_fixed = new List<byte>();
+        m_fixed = new List<bool>();
         m_radii = new VectorXs();
         m_edges = new List<Tuple<int, int>>();
         m_edge_radii = new VectorXs();
@@ -330,6 +331,10 @@ public class TwoDScene
         return m_x;
     }
 
+    public VectorXs getV()
+    {
+        return m_v;
+    }
 
     public int getDof(int particle)
     {
@@ -408,7 +413,7 @@ public class TwoDScene
         m_dofs_to_component.resize(numDofs);
         m_is_strand_tip = new List<bool>(new bool[num_particles]);
 
-        m_fixed = new List<byte>(new byte[num_particles]);
+        m_fixed = new List<bool>(new bool[num_particles]);
         m_radii.resize(num_particles);
         m_particle_tags = new List<string>(new string[num_particles]);
         m_edges = new List<Tuple<int, int>>(new Tuple<int, int>[num_edges]);
@@ -418,6 +423,7 @@ public class TwoDScene
         m_edge_poisson_ratio.resize(num_edges);
         m_particle_to_edge = new List<List<int>>(new List<int>[num_particles]);
         m_num_strands = num_strands;
+        m_strands = new List<StrandForce>(new StrandForce[num_particles]);
         m_edge_to_hair = new List<int>(new int[num_edges]);
     }
 
@@ -477,10 +483,7 @@ public class TwoDScene
 
     public void setFixed(int particle, bool fixe)
     {
-        if (fixe)
-            m_fixed[particle] = 1;
-        else
-            m_fixed[particle] = 0;
+        m_fixed[particle] = fixe;
     }
 
     public void setEdge(int idx, in Tuple<int, int> edge,
@@ -509,7 +512,7 @@ public class TwoDScene
 
     public void computeMassesAndRadiiFromStrands()
     {
-        m_strands.Capacity = m_num_strands;
+        m_strands = new List<StrandForce>(new StrandForce[m_num_strands]);
 
         int nStrand = 0;
         for (int f = 0; f < m_forces.Count(); ++f)
@@ -579,5 +582,141 @@ public class TwoDScene
     public double getHairSteps()
     {
         return m_parameters.hairsteps;
+    }
+
+    public WetHairParameter getParameter()
+    {
+        return m_parameters;
+    }
+
+    public int getNumParticles()
+    {
+        return (m_x.size() + m_num_strands) / 4;
+    }
+
+    public void updateStrandParamsTimestep(in double dt)
+    {
+        for (int p = 0; p < m_strandParameters.Count; ++p)
+        {
+            m_strandParameters[p].computeViscousForceCoefficients(dt);
+        }
+    }
+
+    public void updateStrandStartStates()
+    {
+        for (int s = 0; s < m_num_strands; ++s)
+        {
+            m_strands[s].updateStartDoFs(m_x);
+        }
+        /*
+        if (m_polygonal_cohesion)
+        {
+            m_polygonal_cohesion->updateViscousStartPhi(m_x);
+        }
+        */
+    }
+
+    public void postCompute(in double dt)
+    {
+        int nforces = m_strands.Count;
+        for (int i  = 0; i < nforces; ++i)
+        {
+            Debug.Log("compute force");
+            m_forces[i].postStepScene(dt);
+        }
+    }
+
+    public Tuple<int, int> getEdge(int edg)
+    {
+        return m_edges[edg];
+    }
+
+    public void applyScript(in double dt)
+    {
+        int np = getNumParticles();
+        for (int i =0; i < np; ++i)
+        {
+            if (!isFixed(i)) continue;
+
+            int sg_idx = m_script_group[i];
+            if (sg_idx < 0 || sg_idx >= m_scripted_translate.Count) continue;
+
+            Quaternion q = m_scripted_rotation[sg_idx];
+            VectorXs t = m_scripted_translate[sg_idx];
+
+            VectorXs x0 = new VectorXs(DIM);
+            x0.SetSegment(0, DIM, m_base_x.segment(getDof(i), DIM));
+            VectorXs xstar = new VectorXs(DIM);
+            xstar.SetSegment(0, DIM, m_x.segment(getDof(i), DIM));
+            Quaternion p0 = new Quaternion((float)x0[0], (float)x0[1], (float)x0[2], 0.0f);
+            VectorXs trans_x0 = (q * p0 * Quaternion.Inverse(q)) + t;
+
+            m_v.SetSegment(getDof(i), DIM, (trans_x0 - xstar) / dt);
+        }
+
+        int nstrand = m_strandEquilibriumParameters.Count;
+        for (int i = 0; i < nstrand; ++i)
+        {
+            if (!m_strandEquilibriumParameters[i].m_valid ||
+                !m_strandEquilibriumParameters[i].m_dirty)
+            {
+                continue;
+            }
+
+            updateCurlyHair(m_strandEquilibriumParameters[i].m_dL,
+                            ref m_strandEquilibriumParameters[i].m_vertices,
+                            m_strandEquilibriumParameters[i].m_curl_radius,
+                            m_strandEquilibriumParameters[i].m_curl_density,
+                            m_strandEquilibriumParameters[i].m_root_length);
+            int nverts = m_strandEquilibriumParameters[i].m_vertices.Count;
+            VectorXs dof_restshape = new VectorXs(nverts* 4 - 1);
+            dof_restshape.setZero();
+
+            for (int j = 0; j < nverts; ++j)
+            {
+                dof_restshape.SetSegment(j * 4, 3,
+                    m_strandEquilibriumParameters[i].m_vertices[j]);
+            }
+            m_strands[i].updateRestShape(dof_restshape, 0);
+            m_strandEquilibriumParameters[i].m_dirty = false;
+        }
+    }
+
+    public bool isFixed(int particle)
+    {
+        return m_fixed[particle];
+    }
+
+    void updateCurlyHair(in double dL, ref List<VectorXs> vertices,
+                     double curl_radius, double curl_density,
+                     double root_length)
+    {
+        int nv = vertices.Count;
+        if (nv < 2)
+            return;
+
+        // generate an orthonormal frame
+        VectorXs initnorm = (vertices[1] - vertices[0]).normalized();
+        vertices[1] = vertices[0] + initnorm * root_length;
+
+        VectorXs p1;
+        p1 = CMath.findNormal(initnorm);
+        VectorXs p2 = p1.cross(initnorm);
+
+        double xa = CMath.M_PI / (curl_density * 4);  // 0 // start curve parameter
+        double xb = 0;                          // end curve parameter
+
+        VectorXs freepoint = vertices[1];
+
+        for (int j = 2; j < nv; ++j) {
+            xb = (dL + xa +
+                  curl_radius * curl_radius * curl_density * curl_density * xa) /
+                 (1 + curl_radius * curl_radius * curl_density *
+                          curl_density);  // upate to get length dL along curve
+            vertices[j] = freepoint + xb * initnorm +
+                          curl_radius * Math.Cos(xb * curl_density) * p2 +
+                          curl_radius * Math.Sin(xb * curl_density) * p1;
+            xa = xb;  // next...
+        }
     }
 }

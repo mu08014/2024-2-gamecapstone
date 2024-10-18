@@ -6,14 +6,14 @@ using UnityEngine;
 public class LoadHairSimulation
 {
     public TwoDScene scene;
+    public SceneStepper scene_stepper;
 
     public void loadDERSimulation()
     {
         scene = new TwoDScene(false);
+        scene_stepper = new SceneStepper();
         loadStrandParameters(ref scene);
-        Debug.Log("Complete param");
         loadStrandParticleEdges(ref scene);
-        Debug.Log("Complete edge");
     }
 
     public void loadStrandParameters(ref TwoDScene scene)
@@ -58,7 +58,6 @@ public class LoadHairSimulation
         VectorXi dofVars = new VectorXi(numparticles * 4 - numstrands + 1);
         VectorXi dofVerts = new VectorXi(numparticles * 4 - numstrands + 1);
         VectorXi dofs = new VectorXi(4);
-
         List<bool> tipVerts = new List<bool>(numparticles);
         tipVerts.AddRange(new bool[numparticles]);
         for (int i = 0; i < 4; i++)
@@ -97,6 +96,7 @@ public class LoadHairSimulation
             List<bool> particle_state = new List<bool>();
             List<int> particle_indices = new List<int>();
             int globalvtx = vtx;
+
             foreach (var hairparticle in hair)
             {
                 particle_indices.Add(vtx);
@@ -127,5 +127,39 @@ public class LoadHairSimulation
             scene.insertForce(ref newSF);
             scene.insertStrandEquilibriumParameters(ref newSEP);
         }
+
+        scene.computeMassesAndRadiiFromStrands();
+
+        List<HairFlow> hairflow = scene.getFilmFlows();
+        hairflow = new List<HairFlow>(particle_indices_vec.Count);
+        for (int i = 0; i < particle_indices_vec.Count; ++i)
+        {
+            hairflow.Add(null);
+        }
+    }
+
+    // WetHairCore의 stepSystem()
+    public void hairUpdate(double dt)
+    {
+        WetHairParameter parameter = scene.getParameter();
+        double hairsubstep = dt;
+
+        scene.applyScript(dt);
+        
+        scene.updateStrandParamsTimestep(hairsubstep);
+       
+        for (int i = 0; i < parameter.hairsteps; ++i)
+        {
+            //scene.updatePolygonalStructure(dt); Polygonal Cohesion 구현 후 작업
+
+            scene.updateStrandStartStates();
+
+            //scene_stepper.stepScene(ref scene, hairsubstep); WetHairCore에서도 제대로 작업 X ??
+
+            scene_stepper.accept(ref scene, hairsubstep);
+
+            //scene_stepper.PostStepScene(ref scene, hairsubstep);
+        }
+        
     }
 }

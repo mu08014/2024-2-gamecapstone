@@ -8,6 +8,8 @@ using UnityEngine;
 public class HairInterface : MonoBehaviour
 {
     private List<List<GameObject>> hairs = new List<List<GameObject>>();
+    private LoadHairSimulation loadHairSimulation = new LoadHairSimulation();
+    private int hairParticleCount;
 
     public List<List<GameObject>> Hairs
     {
@@ -20,10 +22,10 @@ public class HairInterface : MonoBehaviour
     private void Start()
     {
         MakeHair();
+        hairParticleCount = getHairParticleCount();
 
-        LoadHairSimulation loadHairSimulation = new LoadHairSimulation();
         loadHairSimulation.loadDERSimulation();
-        for (int i = 0; i < hairs.Count * hairs[0].Count; i++)
+        for (int i = 0; i < hairParticleCount; i++)
         {
             Vectors v = loadHairSimulation.scene.getPosition(i).Clone();
             Debug.Log("x: " + v[0].ToString() + " y: " + v[1].ToString() + " z: " + v[2].ToString());
@@ -32,7 +34,7 @@ public class HairInterface : MonoBehaviour
 
     private void Update()
     {
-
+        HairUpdate();
     }
 
     public List<int> getHairsCount()
@@ -41,6 +43,17 @@ public class HairInterface : MonoBehaviour
         foreach (var hair in hairs)
         {
             result.Add(hair.Count);
+        }
+        return result;
+    }
+
+    public int getHairParticleCount()
+    {
+        int result = 0;
+        foreach (var hair in hairs)
+        {
+            foreach (var particle in hair)
+                result++;
         }
         return result;
     }
@@ -105,7 +118,6 @@ public class HairInterface : MonoBehaviour
                     newHairObject.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
 
                     list.Add(newHairObject);
-                    Debug.Log("create hair");
                 }
             }
             else
@@ -116,6 +128,25 @@ public class HairInterface : MonoBehaviour
         catch (System.Exception e)
         {
             Debug.Log("파일을 읽는 중 오류 발생: " + e.Message);
+        }
+    }
+
+    public void HairUpdate()
+    {
+        loadHairSimulation.hairUpdate(Time.deltaTime);
+
+        int row = 0;
+        int col = 0;
+        for (int i = 0; i < hairParticleCount; i++)
+        {
+            Vectors v = loadHairSimulation.scene.getPosition(i).Clone();
+            hairs[row][col++].transform.position = new Vector3((float)v[0], (float)v[1], (float)v[2]);
+            if (col >= hairs[row].Count)
+            {
+                row++;
+                col = 0;
+            }
+            Debug.Log("x: " + v[0].ToString() + " y: " + v[1].ToString() + " z: " + v[2].ToString());
         }
     }
 

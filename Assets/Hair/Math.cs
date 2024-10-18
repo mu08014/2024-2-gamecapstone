@@ -6,6 +6,7 @@ using System.Numerics;
 using System.Xml.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 //Custom Math
 public class CMath
@@ -52,6 +53,90 @@ public class CMath
         }
         return low;
     }
+
+    public static Vectors orthonormalParallelTransport(in Vectors u, in Vectors t0,
+                                  in Vectors t1)
+    {
+        // This should be called only to transport an orthogonal vector
+
+        Vectors b = t0.cross(t1);
+        double bNorm = b.norm();
+        b /= bNorm;
+
+        Vectors n0 = t0.cross(b);
+        Vectors n1 = t1.cross(b);
+
+        return u.dot(n0) * n1 + u.dot(b) * b;
+    }
+
+    public static void rotateAxisAngle(ref Vectors v, in Vectors z, double theta)
+    {
+        if (theta == 0) return;
+
+        double c = Math.Cos(theta);
+        double s = Math.Sin(theta);
+
+        v = c * v + s * z.cross(z) + z.dot(z) * (1.0 - c) * z;
+    }
+
+    public static double signedAngle(in Vectors u, in Vectors v, in Vectors n)
+    {
+        Vectors w = u.cross(v);
+        double angle = Math.Atan2(w.norm(), u.dot(v));
+        if (n.dot(w) < 0) return -angle;
+        return angle;
+    }
+
+    public static void orthoNormalize(ref VectorXs v, in Vectors n) 
+    {
+        Vectors vs = v.ToVectors();
+        vs -= vs.dot(n)* n;
+        vs = vs.normalize();
+        v = vs.ToVectorXs();
+    }
+
+    public static VectorXs findNormal(VectorXs v)
+    {
+        VectorXs result = new VectorXs(v.Size);
+
+        int maxCoordinate = 0;
+        int n = v.Size;
+        for (int i = 0; i < n; i++)
+        {
+            if (Math.Abs(v[i]) > Math.Abs(v[maxCoordinate]))
+            {
+                maxCoordinate = i;
+            }
+        }
+
+        {
+            int otherCoordinate = (maxCoordinate + 1) % n;
+            result[otherCoordinate] = v[maxCoordinate];
+            result[maxCoordinate] = -v[otherCoordinate];
+        }
+
+        return result.normalized();
+    }
+
+    public static Vectors findNormal(Vectors v)
+    {
+        Vectors result = new Vectors(v.DIM);
+        int maxCoordinate = 0;
+        int n = v.DIM;
+        for (int i = 0; i < n; i++)
+        {
+            if (Math.Abs(v[i]) > Math.Abs(v[maxCoordinate]))
+            {
+                maxCoordinate = i;
+            }
+        }
+        {
+            int otherCoordinate = (maxCoordinate + 1) % n;
+            result[otherCoordinate] = v[maxCoordinate];
+            result[maxCoordinate] = -v[otherCoordinate];
+        }
+        return result.normalized();
+    }
 }
 
 public class VectorXs
@@ -88,6 +173,19 @@ public class VectorXs
         return result;
     }
 
+    public static VectorXs operator -(VectorXs a, VectorXs b)
+    {
+        if (a.Size != b.Size)
+            throw new System.Exception("벡터의 크기가 다릅니다.");
+
+        VectorXs result = new VectorXs(a.Size);
+        for (int i = 0; i < a.Size; i++)
+        {
+            result[i] = a[i] - b[i];
+        }
+        return result;
+    }
+
     public static VectorXs operator *(double a, VectorXs b)
     {
         VectorXs result = new VectorXs(b.Size);
@@ -106,6 +204,37 @@ public class VectorXs
             result[i] = a * b[i];
         }
         return result;
+    }
+
+    public static VectorXs operator /(VectorXs a, double b)
+    {
+        VectorXs result = new VectorXs(a.Size);
+        for (int i = 0; i < a.Size; i++)
+        {
+            if (a[i] != 0)
+                result[i] = a[i] / b;
+        }
+        return result;
+    }
+
+    public static VectorXs operator +(UnityEngine.Quaternion q, VectorXs v)
+    {
+        VectorXs result = new VectorXs(3);
+        for (int i = 0;i < 3;i++)
+        {
+            result[0] = q.x + v[0];
+            result[1] = q.y + v[1];
+            result[2] = q.z + v[2];
+        }
+        return result;
+    }
+
+    public void setZero()
+    {
+        for (int i = 0; i < elements.Count; i++)
+        {
+            elements[i] = 0;
+        }
     }
 
     public int size()
@@ -158,6 +287,56 @@ public class VectorXs
                 elements[i] = v[i - start];
             }
         }
+    }
+
+    public void SetSegment(int start, int n, VectorXs v)
+    {
+        if (v.Size != n)
+            throw new System.Exception("벡터의 크기가 다릅니다.");
+
+        for (int i = start; i < start + n; i++)
+        {
+            if (i >= elements.Count)
+            {
+                elements.Add(elements[i]);
+            }
+            else
+            {
+                elements[i] = v[i - start];
+            }
+        }
+    }
+
+    public VectorXs normalized()
+    {
+        double sum = 0;
+        VectorXs vectors = new VectorXs(Size);
+        for (int i = 0; i < Size; i++)
+        {
+            sum += elements[i] * elements[i];
+        }
+
+        if (sum > 0)
+        {
+            sum = Math.Sqrt(sum);
+            for (int i = 0; i < Size; i++)
+            {
+                if (elements[i] != 0)
+                    vectors[i] = elements[i] / sum;
+            }
+        }
+        return vectors;
+    }
+
+    public VectorXs cross(VectorXs v)
+    {
+        if (v.Size != 3)
+            throw new System.Exception("벡터의 크기가 다릅니다.");
+        VectorXs result = new VectorXs(3);
+        result[0] = elements[1] * v[2] - elements[2] * v[1];
+        result[1] = elements[2] * v[0] - elements[0] * v[2];
+        result[2] = elements[0] * v[1] - elements[1] * v[0];
+        return result;
     }
 
     public Vectors ToVectors()
@@ -249,9 +428,7 @@ public class VectorXi
 
     public void resize(int size)
     {
-        Debug.Log("?");
         elements = new List<int>(new int[size]);
-        Debug.Log("??");
     }
 
     public void conservativeResize(int size)
@@ -397,6 +574,17 @@ public class Vectors //<DIM>으로 구현되어 있는거 클래스 변수로 바꿈
         return result;
     }
 
+    public Vectors cross(Vectors v)
+    {
+        if (v.DIM != 3)
+            throw new System.Exception("벡터의 크기가 다릅니다.");
+        Vectors result = new Vectors(3);
+        result[0] = values[1] * v[2] - values[2] * v[1];
+        result[1] = values[2] * v[0] - values[0] * v[2];
+        result[2] = values[0] * v[1] - values[1] * v[0];
+        return result;
+    }
+
     public double dot(Vectors a)
     {
         double result = 0;
@@ -438,8 +626,19 @@ public class Vectors //<DIM>으로 구현되어 있는거 클래스 변수로 바꿈
             sum = Math.Sqrt(sum);
             for (int i = 0; i < DIM; i++)
             {
-                vectors[i] = values[i] * sum;
+                if (values[i] != 0)
+                    vectors[i] = values[i] / sum;
             }
+        }
+        return vectors;
+    }
+
+    public Vectors segment(int start, int n)
+    {
+        Vectors vectors = new Vectors(n);
+        for (int i = start; i < start + n; i++)
+        {
+            vectors[i - start] = values[i];
         }
         return vectors;
     }
@@ -464,6 +663,27 @@ public class Vectors //<DIM>으로 구현되어 있는거 클래스 변수로 바꿈
         return sum;
     }
 
+    public Vectors normalize()
+    {
+        double sum = 0;
+        Vectors vectors = new Vectors(DIM);
+        for (int i = 0; i < DIM; i++)
+        {
+            sum += values[i] * values[i];
+        }
+
+        if (sum > 0)
+        {
+            sum = Math.Sqrt(sum);
+            for (int i = 0; i < DIM; i++)
+            {
+                if (values[i] != 0)
+                    vectors[i] = values[i] / sum;
+            }
+        }
+        return vectors;
+    }
+
     public Vectors setConstant(double value)
     {
         for (int i = 0;i < DIM;i++)
@@ -471,6 +691,16 @@ public class Vectors //<DIM>으로 구현되어 있는거 클래스 변수로 바꿈
             values[i] = value;
         }
         return this;
+    }
+
+    public VectorXs ToVectorXs()
+    {
+        VectorXs result = new VectorXs(DIM);
+        for (int i = 0; i < DIM; i++)
+        {
+            result[i] = values[i];
+        }
+        return result;
     }
 
 }
