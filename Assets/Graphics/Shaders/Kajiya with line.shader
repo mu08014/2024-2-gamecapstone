@@ -6,6 +6,7 @@ Shader "Custom/KajiyaLine"
 {
     Properties
     {
+        _AspectRatio("AspectRatio", float) = 1.0
         _LineWidth("LineWidth", float) = 0.1
         _DiffuseTerm("DiffuseTerm", Range(0.0, 1.0)) = 1
         _SpecularTerm("SpecularTerm", Range(0.0, 1.0)) = 1
@@ -30,6 +31,7 @@ Shader "Custom/KajiyaLine"
             #include "UnityCG.cginc"
             #include "AutoLight.cginc"
             
+            float _AspectRatio;
             float _LineWidth;
             float _DiffuseTerm;
             float _SpecularTerm;

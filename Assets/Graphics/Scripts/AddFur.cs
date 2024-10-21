@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -14,8 +15,11 @@ public class AddFur : MonoBehaviour
     public float Length = 1.0f;
     public float NoisePower = 0.1f;
 
+    [Range(1, 3)]
+    public int Rod = 1;
+
     [SerializeField] GameObject _furmeshprefab;
-    [SerializeField] Material _furmaterial;
+    [SerializeField] Material _furmaterial = null;
     [SerializeField] Texture2D _lengthTexture;
     private FurMesh _furmesh;
     private MeshFilter _mesh;
@@ -24,8 +28,11 @@ public class AddFur : MonoBehaviour
     {
         _mesh = GetComponent<MeshFilter>();
         _furmesh = Instantiate(_furmeshprefab, transform).GetComponent<FurMesh>();
-        _furmesh.GetComponent<MeshRenderer>().material = _furmaterial;
+        //if (_furmesh != null)
+        //    _furmesh.GetComponent<MeshRenderer>().material = _furmaterial;
         initMesh();
+
+        //StartCoroutine(HairUpdateCo());
     }
 
     private class Vertex {
@@ -45,7 +52,7 @@ public class AddFur : MonoBehaviour
 
         static public Vertex operator/(Vertex a, float b)
         {
-            return new Vertex(a.position / b, a.normal / b, a.uv / b);
+            return new Vertex(a.position / b, a.normal, a.uv / b);
         }
     }
 
@@ -57,11 +64,12 @@ public class AddFur : MonoBehaviour
         if (_lengthTexture != null)
             noiseLength = (_lengthTexture.GetPixelBilinear(av.uv.x, av.uv.y).r - 0.5f) * NoisePower;
 
+        List<Vector3> poses = new();
+        for (int i = 0; i <= Rod; i++)
+            poses.Add(av.position + (Length + noiseLength) * i / Rod * av.normal);
+
         _furmesh.AddHair(new FurMesh.Hair(
-            new List<Vector3> { 
-                av.position, 
-                av.position + av.normal * (Length + noiseLength) },
-            av.normal, av.uv));
+                poses, av.normal, av.uv));
 
         if (level < Iter)
         {
@@ -71,7 +79,7 @@ public class AddFur : MonoBehaviour
         }
     }
 
-    void initMesh()
+    public void initMesh()
     {
         _furmesh.Clear();
 
@@ -93,6 +101,16 @@ public class AddFur : MonoBehaviour
 
     void Update()
     {
-        initMesh();
+        //initMesh();
+    }
+
+    IEnumerator HairUpdateCo()
+    {
+        var wait = new WaitForSeconds(1.0f);
+        while (true)
+        {
+            initMesh();
+            yield return wait;
+        }
     }
 }

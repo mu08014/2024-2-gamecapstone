@@ -2,7 +2,7 @@
 
 // Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
 
-Shader "Custom/Kajiya"
+Shader "Custom/Marschner"
 {
     Properties
     {
@@ -10,7 +10,7 @@ Shader "Custom/Kajiya"
         _LineWidth("LineWidth", float) = 0.1
         _DiffuseTerm("DiffuseTerm", Range(0.0, 1.0)) = 1
         _SpecularTerm("SpecularTerm", Range(0.0, 1.0)) = 1
-        _AmbientTerm("AmbientTerm", Range(0.0, 1.0)) = 0.1
+        _AmbientTerm("AmbientTerm", Range(0.0, 1.0)) = 1
         _SpecularPower("SpecularPower", Range(0.0, 1000.0)) = 10
         _Color ("Color", Color) = (1,1,1,1)
         _MainTex ("Texture", 2D) = "white" {}
@@ -37,8 +37,8 @@ Shader "Custom/Kajiya"
             float _LineWidth;
             float _DiffuseTerm;
             float _SpecularTerm;
-            float _SpecularPower;
             float _AmbientTerm;
+            float _SpecularPower;
             fixed4 _Color;
             sampler2D _MainTex;
             
@@ -70,14 +70,14 @@ Shader "Custom/Kajiya"
                 o.normal = v.normal;
                 o.tangent = normalize(v.tangent);
                 
-                o.lightDir = -mul(unity_WorldToObject, _WorldSpaceLightPos0);
+                o.lightDir = mul(unity_WorldToObject, _WorldSpaceLightPos0);
                 o.cameraDir = normalize(
                     mul(unity_WorldToObject, _WorldSpaceCameraPos)
                     - v.vertex);
 
                 o.color = tex2Dlod(_MainTex, float4(v.uv, 0, 0));
                 //o.color = o.pos;
-
+                o.color = _Color;
                 //o.pos /= o.pos.w;
 
                 TRANSFER_SHADOW(o);
@@ -131,13 +131,6 @@ Shader "Custom/Kajiya"
                 float3 specular = _SpecularTerm * pow(
                     DotTL * DotTC + SinTL * SinTC,
                     _SpecularPower);
-                
-                /*
-                float3 halfVec = normalize(i.lightDir + i.cameraDir);
-                specular = pow( 
-                    sqrt(1 - dot(i.tangent, halfVec) * dot(i.tangent, halfVec)),
-                    _SpecularPower) * _SpecularTerm;
-                */
 
                 // embient
                 float3 embient = i.color * _AmbientTerm;
@@ -194,7 +187,7 @@ Shader "Custom/Kajiya"
             }
             ENDCG
         }
-        UsePass "VertexLit/SHADOWCASTER"
+        //UsePass "VertexLit/SHADOWCASTER"
     }
     FallBack "Diffuse"
 }
