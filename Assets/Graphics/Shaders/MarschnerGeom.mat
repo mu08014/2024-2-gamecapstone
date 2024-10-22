@@ -61,13 +61,13 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _AmbientTerm: 0
+    - _AmbientTerm: 0.05
     - _AspectRatio: 1
     - _BumpScale: 1
     - _Cutoff: 0.5
     - _DetailNormalMapScale: 1
     - _DiffusTerm: 1
-    - _DiffuseTerm: 0
+    - _DiffuseTerm: 1
     - _DstBlend: 0
     - _GlossMapScale: 1
     - _Glossiness: 0.5
@@ -79,12 +79,16 @@ Material:
     - _Parallax: 0.02
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
-    - _SpecularPower: 201
+    - _SpecularPower: 397
+    - _SpecularRTerm: 1
+    - _SpecularTRTTerm: 1
+    - _SpecularTTTerm: 1
     - _SpecularTerm: 1
     - _SrcBlend: 1
     - _UVSec: 0
     - _ZWrite: 1
     m_Colors:
-    - _Color: {r: 0.6603774, g: 0.5174361, b: 0, a: 1}
+    - _Color: {r: 0.9686275, g: 0.48627454, b: 0.15294118, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+    - _SecondSpecularColor: {r: 1, g: 0.16016242, b: 0, a: 1}
   m_BuildTextureStacks: []

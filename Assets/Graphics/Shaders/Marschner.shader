@@ -9,10 +9,13 @@ Shader "Custom/Marschner"
         _AspectRatio("AspectRatio", float) = 1.0
         _LineWidth("LineWidth", float) = 0.1
         _DiffuseTerm("DiffuseTerm", Range(0.0, 1.0)) = 1
-        _SpecularTerm("SpecularTerm", Range(0.0, 1.0)) = 1
+        _SpecularRTerm("SpecularRTerm", Range(0.0, 1.0)) = 1
+        _SpecularTTTerm("SpecularTTTerm", Range(0.0, 1.0)) = 1
+        _SpecularTRTTerm("SpecularTRTTerm", Range(0.0, 1.0)) = 1
         _AmbientTerm("AmbientTerm", Range(0.0, 1.0)) = 1
         _SpecularPower("SpecularPower", Range(0.0, 1000.0)) = 10
         _Color ("Color", Color) = (1,1,1,1)
+        _SecondSpecularColor("SecondColor", Color) = (1,1,1,1)
         _MainTex ("Texture", 2D) = "white" {}
     }
     SubShader
@@ -36,10 +39,13 @@ Shader "Custom/Marschner"
             float _AspectRatio;
             float _LineWidth;
             float _DiffuseTerm;
-            float _SpecularTerm;
+            float _SpecularRTerm;
+            float _SpecularTTTerm;
+            float _SpecularTRTTerm;
             float _AmbientTerm;
             float _SpecularPower;
             fixed4 _Color;
+            fixed4 _SecondSpecularColor;
             sampler2D _MainTex;
             
             struct appdata
@@ -70,18 +76,16 @@ Shader "Custom/Marschner"
                 o.normal = v.normal;
                 o.tangent = normalize(v.tangent);
                 
-                o.lightDir = mul(unity_WorldToObject, _WorldSpaceLightPos0);
+                o.lightDir = -mul(unity_WorldToObject, _WorldSpaceLightPos0);
                 o.cameraDir = normalize(
                     mul(unity_WorldToObject, _WorldSpaceCameraPos)
                     - v.vertex);
 
                 o.color = tex2Dlod(_MainTex, float4(v.uv, 0, 0));
-                //o.color = o.pos;
                 o.color = _Color;
-                //o.pos /= o.pos.w;
 
                 TRANSFER_SHADOW(o);
-                
+             
                 return o;
             }
             
@@ -120,24 +124,35 @@ Shader "Custom/Marschner"
             float4 frag (v2f i) : SV_Target
             {
                 // diffuse
-                float DotTL = max(dot(i.tangent, i.lightDir), 0.0);
-                float3 diffuse = _DiffuseTerm * sqrt(1 - DotTL * DotTL) * i.color;
+                float DotTL = saturate(dot(i.tangent, i.lightDir));
+                float3 diffuse = _DiffuseTerm * saturate(0.75 * sqrt(1 - DotTL * DotTL) + 0.25) * i.color;
 
                 float DotTC = max(dot(i.tangent, i.cameraDir), 0.0);
                 float SinTL = sqrt(1 - DotTL * DotTL);
                 float SinTC = sqrt(1 - DotTC * DotTC);
 
-                // specular
-                float3 specular = _SpecularTerm * pow(
-                    DotTL * DotTC + SinTL * SinTC,
-                    _SpecularPower);
+                float a = 3.0 * 3.14159265359 / 180.0;
 
+                // specular
+                float3 specularR = _SpecularRTerm * pow(
+                //    DotTL * DotTC + SinTL * SinTC,
+                    (DotTL*cos(2*a) - SinTL*sin(2*a)) * DotTC + (SinTL*cos(2*a) + DotTL*sin(2*a)) * SinTC,
+                    _SpecularPower / 2);
+
+                    
+                float3 specularTRT = _SpecularTRTTerm * pow(
+                    (DotTL*cos(3*a) + SinTL*sin(3*a)) * DotTC + (SinTL*cos(3*a) - DotTL*sin(3*a)) * SinTC,
+                    _SpecularPower) * _SecondSpecularColor;
+
+                float3 specular = specularR + specularTRT;
+                
                 // embient
                 float3 embient = i.color * _AmbientTerm;
                 
                 float shadowAttenuation = SHADOW_ATTENUATION(i);
                 float3 color = (diffuse + specular) * shadowAttenuation  + embient;
 
+                //return float4(h.xyz, 1);
                 return float4(color, 1);
             }
             ENDCG

@@ -131,13 +131,6 @@ Shader "Custom/Kajiya"
                 float3 specular = _SpecularTerm * pow(
                     DotTL * DotTC + SinTL * SinTC,
                     _SpecularPower);
-                
-                /*
-                float3 halfVec = normalize(i.lightDir + i.cameraDir);
-                specular = pow( 
-                    sqrt(1 - dot(i.tangent, halfVec) * dot(i.tangent, halfVec)),
-                    _SpecularPower) * _SpecularTerm;
-                */
 
                 // embient
                 float3 embient = i.color * _AmbientTerm;
