@@ -6,6 +6,8 @@ using System.Reflection;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UIElements;
+using System.Threading;
+using System.Threading.Tasks;
 
 public struct Script
 {
@@ -225,10 +227,10 @@ public class TwoDScene
     private VectorXs m_edge_poisson_ratio = new VectorXs();
 
     private List<Force> m_forces;
-    private List<Force> m_external_forces;
-    private List<Force> m_internal_forces;
-    private List<List<Force>> m_hair_internal_forces; // hair-> forces only affecting that hair
-    private List<Force> m_inter_hair_forces; // String 'tags' assinged to  particles. Can be used to identify and single out
+    private List<Force> m_external_forces = new List<Force>();
+    private List<Force> m_internal_forces = new List<Force>();
+    private List<List<Force>> m_hair_internal_forces = new List<List<Force>>(); // hair-> forces only affecting that hair
+    private List<Force> m_inter_hair_forces = new List<Force>(); // String 'tags' assinged to  particles. Can be used to identify and single out
     private List<String> m_particle_tags;
 
     private List<int> m_particle_to_hairs;
@@ -241,7 +243,7 @@ public class TwoDScene
 
     private List<int> m_particle_to_hair_local_indices;
 
-    private List<HairFlow> m_flows;
+    private List<HairFlow> m_flows = new List<HairFlow>();
 
     private List<List<int>> m_particle_to_edge = new List<List<int>>();
 
@@ -307,7 +309,7 @@ public class TwoDScene
         m_fluid_sim = null;
         m_polygonal_cohesion = null;
         m_massSpringSim = isMassSpring;
-        for (int i = 0; i<m_forces.Count; i++)
+        for (int i = 0; i < m_forces.Count; i++)
         {
             m_forces[i] = otherscene.m_forces[i].Clone();
         }
@@ -320,7 +322,8 @@ public class TwoDScene
 
     public bool isTip(int particle)
     {
-        if (!m_massSpringSim) {
+        if (!m_massSpringSim)
+        {
             return m_is_strand_tip[particle];
         }
         return false;
@@ -421,7 +424,12 @@ public class TwoDScene
         m_edge_rest_radii.resize(num_edges);
         m_edge_rest_length.resize(num_edges);
         m_edge_poisson_ratio.resize(num_edges);
-        m_particle_to_edge = new List<List<int>>(new List<int>[num_particles]);
+        m_particle_to_edge = new List<List<int>>(num_particles);
+        for (int i = 0; i < num_particles; i++)
+        {
+            m_particle_to_edge.Add(new List<int>());
+        }
+
         m_num_strands = num_strands;
         m_strands = new List<StrandForce>(new StrandForce[num_particles]);
         m_edge_to_hair = new List<int>(new int[num_edges]);
@@ -486,9 +494,10 @@ public class TwoDScene
         m_fixed[particle] = fixe;
     }
 
-    public void setEdge(int idx, in Tuple<int, int> edge,
+    public void setEdge(int idx, Tuple<int, int> edge,
         double radius)
     {
+
         m_edges[idx] = edge;
         m_particle_to_edge[edge.Item1].Add(idx);
         m_particle_to_edge[edge.Item2].Add(idx);
@@ -619,9 +628,8 @@ public class TwoDScene
     public void postCompute(in double dt)
     {
         int nforces = m_strands.Count;
-        for (int i  = 0; i < nforces; ++i)
+        for (int i = 0; i < nforces; ++i)
         {
-            Debug.Log("compute force");
             m_forces[i].postStepScene(dt);
         }
     }
@@ -634,7 +642,7 @@ public class TwoDScene
     public void applyScript(in double dt)
     {
         int np = getNumParticles();
-        for (int i =0; i < np; ++i)
+        for (int i = 0; i < np; ++i)
         {
             if (!isFixed(i)) continue;
 
@@ -669,7 +677,7 @@ public class TwoDScene
                             m_strandEquilibriumParameters[i].m_curl_density,
                             m_strandEquilibriumParameters[i].m_root_length);
             int nverts = m_strandEquilibriumParameters[i].m_vertices.Count;
-            VectorXs dof_restshape = new VectorXs(nverts* 4 - 1);
+            VectorXs dof_restshape = new VectorXs(nverts * 4 - 1);
             dof_restshape.setZero();
 
             for (int j = 0; j < nverts; ++j)
@@ -687,7 +695,7 @@ public class TwoDScene
         return m_fixed[particle];
     }
 
-    void updateCurlyHair(in double dL, ref List<VectorXs> vertices,
+    public void updateCurlyHair(in double dL, ref List<VectorXs> vertices,
                      double curl_radius, double curl_density,
                      double root_length)
     {
@@ -708,7 +716,8 @@ public class TwoDScene
 
         VectorXs freepoint = vertices[1];
 
-        for (int j = 2; j < nv; ++j) {
+        for (int j = 2; j < nv; ++j)
+        {
             xb = (dL + xa +
                   curl_radius * curl_radius * curl_density * curl_density * xa) /
                  (1 + curl_radius * curl_radius * curl_density *
@@ -717,6 +726,462 @@ public class TwoDScene
                           curl_radius * Math.Cos(xb * curl_density) * p2 +
                           curl_radius * Math.Sin(xb * curl_density) * p1;
             xa = xb;  // next...
+        }
+    }
+
+    public void updateHairConnectivity()
+    {
+        int nf = m_flows.Count;
+
+        m_particle_to_hairs = new List<int>(getNumParticles());
+        for (int i = 0; i < getNumParticles(); i++)
+        {
+            m_particle_to_hairs.Add(-1);
+        }
+
+        m_particle_to_hair_local_indices = new List<int>(getNumParticles());
+        for (int i = 0; i < getNumParticles(); i++)
+        {
+            m_particle_to_hair_local_indices.Add(-1);
+        }
+
+        for (int i = 0; i < nf; i++)
+        {
+            HairFlow flow = m_flows[i];
+            var indices = flow.getParticleIndices();
+            int nfp = indices.Count;
+            for (int j = 0; j < nfp; j++)
+            {
+                int pidx = indices[j];
+                m_particle_to_hairs[pidx] = i;
+                m_particle_to_hair_local_indices[pidx] = j;
+            }
+        }
+    }
+
+    public bool isMassSpring()
+    {
+        return m_massSpringSim;
+    }
+
+    public int getNumFlows()
+    {
+        return m_flows.Count;
+    }
+
+    public int getNumDofs()
+    {
+        return m_x.Size;
+    }
+
+    public void preComputeLocal(in VectorXs dx, in VectorXs dv, double dt)
+    {
+        int nfl = m_hair_internal_forces.Count;
+
+        if (dx.Size == 0)
+        {
+            Parallel.For(0, nfl, (i) => {
+                foreach (Force f in m_hair_internal_forces[i])
+                {
+                    if (!f.isPrecomputationParallelized())
+                    {
+                        f.preCompute(m_x, m_v, m_interpolated_m, dt);
+                    }
+                }
+            });
+
+            for (int i = 0; i < nfl; ++i)
+            {
+                foreach (Force f in m_hair_internal_forces[i])
+                {
+                    if (f.isPrecomputationParallelized())
+                        f.preCompute(m_x, m_v, m_interpolated_m, dt);
+                }
+            }
+
+            foreach (Force f in m_external_forces)
+            {
+                f.preCompute(m_x, m_v, m_interpolated_m, dt);
+            }
+        }
+        else
+        {
+            VectorXs nx = m_x + dx;
+            VectorXs nv = m_v + dv;
+            Parallel.For(0, nfl, (i) => {
+                foreach (Force f in m_hair_internal_forces[i])
+                {
+                    if (!f.isPrecomputationParallelized())
+                    {
+                        f.preCompute(nx, nv, m_interpolated_m, dt);
+                    }
+                }
+            });
+
+            for (int i = 0; i < nfl; ++i)
+            {
+                foreach (Force f in m_hair_internal_forces[i])
+                {
+                    if (f.isPrecomputationParallelized())
+                        f.preCompute(nx, nv, m_interpolated_m, dt);
+                }
+            }
+
+            foreach (Force f in m_external_forces)
+            {
+                f.preCompute(nx, nv, m_interpolated_m, dt);
+            }
+        }
+    }
+
+    public void updateNumConstraintsLocal(ref int num_constraint_pos_,
+        ref int num_constraint_vel_,
+        ref int num_J_, ref int num_Jv_,
+        ref int num_Jxv_,
+        ref int num_tildeK_)
+    {
+        m_constraint_idx = new VectorXi(6);
+
+        int nfl = getNumFlows();
+        for (int i = 0; i < nfl; ++i)
+        {
+            List<Force> hair_forces = m_hair_internal_forces[i];
+            int nhair_forces = hair_forces.Count;
+
+            VectorXi constraint_start = m_constraint_idx.Clone();
+
+            for (int j = 0; j < nhair_forces; ++j)
+            {
+                int num_pos = hair_forces[j].numConstraintPos();
+                int num_vel = hair_forces[j].numConstraintVel();
+                int num_J = hair_forces[j].numJ();
+                int num_Jv = hair_forces[j].numJv();
+                int num_Jxv = hair_forces[j].numJxv();
+                int num_TildeK = hair_forces[j].numTildeK();
+
+                hair_forces[j].setInternalIndex(
+                    m_constraint_idx[0], m_constraint_idx[1], m_constraint_idx[2],
+                    m_constraint_idx[3], m_constraint_idx[4], m_constraint_idx[5]);
+                m_constraint_idx[0] += num_pos;
+                m_constraint_idx[1] += num_vel;
+                m_constraint_idx[2] += num_J;
+                m_constraint_idx[3] += num_Jv;
+                m_constraint_idx[4] += num_Jxv;
+                m_constraint_idx[5] += num_TildeK;
+            }
+
+            VectorXi num_constraints = m_constraint_idx - constraint_start;
+
+            m_flows[i].setConstraintParameters(constraint_start, num_constraints);
+        }
+
+        num_constraint_pos_ = m_constraint_idx[0];
+        num_constraint_vel_ = m_constraint_idx[1];
+        num_J_ = m_constraint_idx[2];
+        num_Jv_ = m_constraint_idx[3];
+        num_Jxv_ = m_constraint_idx[4];
+        num_tildeK_ = m_constraint_idx[5];
+    }
+
+    public void localPostPreprocess(ref VectorXs lambda, ref VectorXs lambda_v,
+        ref TripletXs J, ref TripletXs Jv,
+        ref TripletXs Jxv, ref TripletXs tildeK,
+        ref TripletXs stiffness,
+        ref TripletXs damping, ref VectorXs Phi,
+        ref VectorXs Phiv, in VectorXs dx,
+        in VectorXs dv, in double dt)
+    {
+        int nf = m_hair_internal_forces.Count;
+
+        VectorXs local_lambda = lambda;
+        VectorXs local_lambda_v = lambda_v;
+        TripletXs local_J = J;
+        TripletXs local_Jv = Jv;
+        TripletXs local_Jxv = Jxv;
+        TripletXs local_tildeK = tildeK;
+        TripletXs local_stiffness = stiffness;
+        TripletXs local_damping = damping;
+        VectorXs local_Phi = Phi;
+        VectorXs local_Phiv = Phiv;
+        VectorXs local_dx = dx;
+        VectorXs local_dv = dv;
+        double local_dt = dt;
+
+        if (dx.size() == 0)
+        {
+            Parallel.For(0, nf, (i) => {
+                foreach (Force f in m_hair_internal_forces[i])
+                {
+                    if (!f.isParallelized())
+                    {
+                        f.computeIntegrationVars(m_x, m_v, m_interpolated_m, ref local_lambda,
+                                                 ref local_lambda_v, ref local_J, ref local_Jv, ref local_Jxv, ref local_tildeK,
+                                                 ref local_stiffness, ref local_damping, ref local_Phi, ref local_Phiv, local_dt);
+                    }
+                }
+            });
+
+            for (int i = 0; i < nf; ++i)
+            {
+                foreach (Force f in m_hair_internal_forces[i])
+                {
+                    if (f.isParallelized())
+                        f.computeIntegrationVars(m_x, m_v, m_interpolated_m, ref local_lambda,
+                                                  ref local_lambda_v, ref local_J, ref local_Jv, ref local_Jxv, ref local_tildeK, ref local_stiffness,
+                                                  ref local_damping, ref local_Phi, ref local_Phiv, dt);
+                }
+            }
+        }
+        else
+        {
+            VectorXs nx = m_x + dx;
+            VectorXs nv = m_v + dv;
+
+            Parallel.For(0, nf, (i) => {
+                foreach (Force f in m_hair_internal_forces[i])
+                {
+                    if (!f.isParallelized())
+                    {
+                        f.computeIntegrationVars(nx, nv, m_interpolated_m, ref local_lambda,
+                                                 ref local_lambda_v, ref local_J, ref local_Jv, ref local_Jxv, ref local_tildeK,
+                                                 ref local_stiffness, ref local_damping, ref local_Phi, ref local_Phiv, local_dt);
+                    }
+                }
+            });
+
+            for (int i = 0; i < nf; ++i)
+            {
+                foreach (Force f in m_hair_internal_forces[i])
+                {
+                    if (f.isParallelized())
+                        f.computeIntegrationVars(nx, nv, m_interpolated_m, ref local_lambda,
+                                                  ref local_lambda_v, ref local_J, ref local_Jv, ref local_Jxv, ref local_tildeK, ref local_stiffness,
+                                                  ref local_damping, ref local_Phi, ref local_Phiv, dt);
+                }
+            }
+        }
+
+        lambda = local_lambda;
+        lambda_v = local_lambda_v;
+        J = local_J;
+        Jv = local_Jv;
+        Jxv = local_Jxv;
+        tildeK = local_tildeK;
+        stiffness = local_stiffness;
+        damping = local_damping;
+        Phi = local_Phi;
+    }
+
+    public VectorXs getInterpolatedM()
+    {
+        return m_interpolated_m;
+    }
+
+    public List<int> getParticleToHairLocalIndices()
+    {
+        return m_particle_to_hair_local_indices;
+    }
+
+    public List<int> getParticleToHairs()
+    {
+        return m_particle_to_hairs;
+    }
+
+    public void accumulateExternalGradU(ref VectorXs F, in VectorXs dx,
+        in VectorXs dv)
+    {
+        if (dx.size() == 0)
+        {
+            for (int i = 0; i < m_external_forces.Count; i++)
+            {
+                m_external_forces[i].addGradEToTotal(m_x, m_v, m_interpolated_m, ref F);
+            }
+        }
+        else
+        {
+            for (int i = 0; i < m_external_forces.Count; i++)
+            {
+                m_external_forces[i].addGradEToTotal(m_x + dx, m_v + dv, m_interpolated_m, ref F);
+            }
+        }
+    }
+
+    public void storeLambda(in VectorXs lambda, in VectorXs lambda_v)
+    {
+        VectorXs lambda_ = lambda;
+        VectorXs lambda_v_ = lambda_v;
+        int nf = m_internal_forces.Count;
+        Parallel.For(0, nf, i => { 
+            m_internal_forces[i].storeLambda(lambda_, lambda_v_);
+        });
+    }
+
+    public void preComputeInterhair(in VectorXs dx, in VectorXs dv, in double dt)
+    {
+        int nf = m_inter_hair_forces.Count;
+        if (dx.size() == 0)
+        {
+            double local_dt = dt;
+            Parallel.For(0, nf, i => {
+                if (!m_inter_hair_forces[i].isPrecomputationParallelized())
+                    m_inter_hair_forces[i].preCompute(m_x, m_v, m_interpolated_m, local_dt);
+            });
+
+            for (int i = 0; i < nf; ++i)
+            {
+                if (m_inter_hair_forces[i].isPrecomputationParallelized())
+                    m_inter_hair_forces[i].preCompute(m_x, m_v, m_interpolated_m, dt);
+            }
+        }
+        else
+        {
+            VectorXs nx = m_x + dx;
+            VectorXs nv = m_v + dv;
+            double local_dt = dt;
+            Parallel.For(0, nf, i => {
+                if (!m_inter_hair_forces[i].isPrecomputationParallelized())
+                    m_inter_hair_forces[i].preCompute(nx, nv, m_interpolated_m, local_dt);
+            });
+
+            for (int i = 0; i < nf; ++i)
+            {
+                if (m_inter_hair_forces[i].isPrecomputationParallelized())
+                    m_inter_hair_forces[i].preCompute(nx, nv, m_interpolated_m, dt);
+            }
+        }
+    }
+
+    public void updateNumConstraintsInterHair(
+        ref int num_constraint_pos_, ref int num_constraint_vel_, ref int num_J_,
+    ref int num_Jv_, ref int num_Jxv_, ref int num_tildeK_, ref VectorXi interhair_param,
+    ref VectorXi interhair_num)
+    {
+        interhair_param = m_constraint_idx;
+
+        for (int i = 0; i < m_inter_hair_forces.Count;
+             ++i)
+        {
+            int num_pos = m_inter_hair_forces[i].numConstraintPos();
+            int num_vel = m_inter_hair_forces[i].numConstraintVel();
+            int num_J = m_inter_hair_forces[i].numJ();
+            int num_Jv = m_inter_hair_forces[i].numJv();
+            int num_Jxv = m_inter_hair_forces[i].numJxv();
+            int num_TildeK = m_inter_hair_forces[i].numTildeK();
+
+            m_inter_hair_forces[i].setInternalIndex(
+                m_constraint_idx[0], m_constraint_idx[1], m_constraint_idx[2],
+                m_constraint_idx[3], m_constraint_idx[4], m_constraint_idx[5]);
+            m_constraint_idx[0] += num_pos;
+            m_constraint_idx[1] += num_vel;
+            m_constraint_idx[2] += num_J;
+            m_constraint_idx[3] += num_Jv;
+            m_constraint_idx[4] += num_Jxv;
+            m_constraint_idx[5] += num_TildeK;
+        }
+
+        num_constraint_pos_ = m_constraint_idx[0];
+        num_constraint_vel_ = m_constraint_idx[1];
+        num_J_ = m_constraint_idx[2];
+        num_Jv_ = m_constraint_idx[3];
+        num_Jxv_ = m_constraint_idx[4];
+        num_tildeK_ = m_constraint_idx[5];
+
+        interhair_num = m_constraint_idx - interhair_param;
+    }
+
+    public void interhairPostPreprocess(
+        VectorXs lambda, VectorXs lambda_v, TripletXs J, TripletXs Jv,
+        TripletXs Jxv, TripletXs tildeK, TripletXs stiffness, TripletXs damping,
+        VectorXs Phi, VectorXs Phiv, VectorXs dx, VectorXs dv,
+        double dt)
+    {
+        int nf = m_inter_hair_forces.Count;
+        if (dx.size() == 0)
+        {
+            // for unparallelized forces
+            Parallel.For(0, nf, i => {
+                if (!m_inter_hair_forces[i].isParallelized())
+                    m_inter_hair_forces[i].computeIntegrationVars(
+                        m_x, m_v, m_interpolated_m, ref lambda, ref lambda_v, ref J, ref Jv, ref Jxv, ref tildeK,
+                        ref stiffness, ref damping, ref Phi, ref Phiv, dt);
+            });
+
+            // for parallelized forces
+            for (int i = 0; i < nf; ++i)
+            {
+                if (m_inter_hair_forces[i].isParallelized())
+                    m_inter_hair_forces[i].computeIntegrationVars(
+                        m_x, m_v, m_interpolated_m, ref lambda, ref lambda_v, ref J, ref Jv, ref Jxv, ref tildeK,
+                        ref stiffness, ref damping, ref Phi, ref Phiv, dt);
+            }
+        }
+        else
+        {
+            VectorXs nx = m_x + dx;
+            VectorXs nv = m_v + dv;
+            // for unparallelized forces
+            Parallel.For(0, nf, i => {
+                if (!m_inter_hair_forces[i].isParallelized())
+                    m_inter_hair_forces[i].computeIntegrationVars(
+                        nx, nv, m_interpolated_m, ref lambda, ref lambda_v, ref J, ref Jv, ref Jxv, ref tildeK,
+                        ref stiffness, ref damping, ref Phi, ref Phiv, dt);
+            });
+
+            // for parallelized forces
+            for (int i = 0; i < nf; ++i)
+            {
+                if (m_inter_hair_forces[i].isParallelized())
+                    m_inter_hair_forces[i].computeIntegrationVars(
+                        nx, nv, m_interpolated_m, ref lambda, ref lambda_v, ref J, ref Jv, ref Jxv, ref tildeK,
+                        ref stiffness, ref damping, ref Phi, ref Phiv, dt);
+            }
+        }
+    }
+
+    public void insertFilmFlow(HairFlow flow)
+    {
+        m_flows.Add(flow);
+    }
+
+    public VectorXs getHairRestMass()
+    {
+        return m_rest_m;
+    }
+
+    public void categorizeForces()
+    {
+        m_external_forces.Clear();
+        m_internal_forces.Clear();
+        m_inter_hair_forces.Clear();
+        m_hair_internal_forces = new List<List<Force>>(m_flows.Count);
+
+        for (int i = 0; i < m_flows.Count; ++i)
+        {
+            m_hair_internal_forces.Add(new List<Force>(0));
+        }
+
+        for (int i = 0; i < m_forces.Count; ++i)
+        {
+            if (m_forces[i].isExternal())
+            {
+                m_external_forces.Add(m_forces[i]);
+            }
+            else
+            {
+                m_internal_forces.Add(m_forces[i]);
+
+                if (!m_forces[i].isInterHair(new VectorXs(0), new VectorXs(0)))
+                {
+                    int hidx = m_forces[i].getAffectedHair(m_particle_to_hairs);
+                    if (hidx < 0)
+                        continue;
+                    m_hair_internal_forces[hidx].Add(m_forces[i]);
+                }
+                else
+                {
+                    m_inter_hair_forces.Add(m_forces[i]);
+                }
+            }
         }
     }
 }

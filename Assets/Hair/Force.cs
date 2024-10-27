@@ -13,7 +13,7 @@ public class Force
     protected int m_internal_index_J;
     protected int m_internal_index_Jv;
     protected int m_internal_index_Jxv;
-    protected int m_intermal_index_tildeK;
+    protected int m_internal_index_tildeK;
 
     public Force() { }
 
@@ -24,7 +24,7 @@ public class Force
         this.m_internal_index_J = other.m_internal_index_J;
         this.m_internal_index_Jv = other.m_internal_index_Jv;
         this.m_internal_index_Jxv = other.m_internal_index_Jxv;
-        this.m_intermal_index_tildeK = other.m_intermal_index_tildeK;
+        this.m_internal_index_tildeK = other.m_internal_index_tildeK;
     }
 
     public Force Clone()
@@ -95,7 +95,7 @@ public class Force
         m_internal_index_J = index_J;
         m_internal_index_Jv = index_Jv;
         m_internal_index_Jxv = index_Jxv;
-        m_intermal_index_tildeK = index_tildeK;
+        m_internal_index_tildeK = index_tildeK;
     }
 
 }

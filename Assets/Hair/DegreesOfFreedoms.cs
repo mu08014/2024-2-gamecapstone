@@ -1,8 +1,10 @@
+using JetBrains.Annotations;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -288,6 +290,10 @@ public class Kappas : DependencyNode<List<VectorXs>>
     public Kappas(ref CurvatureBinormals curvatureBinormals, 
         ref MaterialFrames1 materialFrames1, ref MaterialFrames2 materialFrames2) : base(new List<VectorXs>(curvatureBinormals.size()), 1, curvatureBinormals.size())
     {
+        for (int i = 0; i < m_size; i++)
+        {
+            m_value.Add(new VectorXs(2));
+        }
         m_curvatureBinormals = curvatureBinormals;
         m_materialFrames1 = materialFrames1;
         m_materialFrames2 = materialFrames2;
@@ -332,12 +338,372 @@ public class Kappas : DependencyNode<List<VectorXs>>
     }
 }
 
+public class GradKappas : DependencyNode<List<MatrixXs>>
+{
+    protected Lengths m_lengths;
+    protected Tangents m_tangents;
+    protected CurvatureBinormals m_curvatureBinormals;
+    protected MaterialFrames1 m_materialFrames1;
+    protected MaterialFrames2 m_materialFrames2;
+    protected Kappas m_kappas;
+
+    public GradKappas(ref Lengths lengths, ref Tangents tangents,
+        ref CurvatureBinormals curvatureBinormals, ref MaterialFrames1 materialFrames1,
+        ref MaterialFrames2 materialFrames2, ref Kappas kappas) : base(new List<MatrixXs>(), 1, curvatureBinormals.size())
+    {
+        for (int i = 0; i < m_size; i++)
+        {
+            m_value.Add(new MatrixXs(11, 2));
+        }
+        m_lengths = lengths;
+        m_tangents = tangents;
+        m_curvatureBinormals = curvatureBinormals;
+        m_materialFrames1 = materialFrames1;
+        m_materialFrames2 = materialFrames2;
+        m_kappas = kappas;
+        m_lengths.addDependent(this);
+        m_tangents.addDependent(this);
+        m_curvatureBinormals.addDependent(this);
+        m_materialFrames1.addDependent(this);
+        m_materialFrames2.addDependent(this);
+        m_kappas.addDependent(this);
+    }
+
+    public MatrixXs this[int index]
+    {
+        get => m_value[index];
+        set => m_value[index] = value;
+    }
+
+    public string name() { return "GradKeppas"; }
+
+    protected override void compute()
+    {
+        m_value = new List<MatrixXs>(m_size);
+        for (int i = 0; i < m_size; i++)
+        {
+            m_value.Add(new MatrixXs(11, 2));
+        }
+        List<double> lengths = m_lengths.get();
+        List<Vectors> tangents = m_tangents.get();
+        List<Vectors> curvatureBinormals = m_curvatureBinormals.get();
+        List<VectorXs> materialFrames1 = m_materialFrames1.get();
+        List<VectorXs> materialFrames2 = m_materialFrames2.get();
+        List<VectorXs> kappas = m_kappas.get();
+
+        for (int vtx = m_firstValidIndex; vtx < size(); ++vtx)
+        {
+            MatrixXs gradKappa = m_value[vtx];
+            gradKappa.setZero();
+
+            double norm_e = lengths[vtx - 1];
+            double norm_f = lengths[vtx];
+
+            Vectors te = tangents[vtx - 1];
+            Vectors tf = tangents[vtx];
+
+            VectorXs m1e = materialFrames1[vtx - 1];
+            VectorXs m2e = materialFrames2[vtx - 1];
+            VectorXs m1f = materialFrames1[vtx];
+            VectorXs m2f = materialFrames2[vtx];
+
+            double chi = 1.0 + te.dot(tf);
+
+            //    assert( chi>0 );
+            if (chi <= 0)
+            {
+                chi = 1e-12;
+            }
+
+            Vectors tilde_t = (te + tf) / chi;
+            Vectors tilde_d1 = ((m1e + m1f) / chi).ToVectors();
+            Vectors tilde_d2 = ((m2e + m2f) / chi).ToVectors();
+
+            VectorXs kappa = kappas[vtx];
+
+            Vectors Dkappa0De =
+                1.0 / norm_e * (-kappa[0] * tilde_t + tf.cross(tilde_d2));
+            Vectors Dkappa0Df =
+                1.0 / norm_f * (-kappa[0] * tilde_t - te.cross(tilde_d2));
+            Vectors Dkappa1De =
+                1.0 / norm_e * (-kappa[1] * tilde_t - tf.cross(tilde_d1));
+            Vectors Dkappa1Df =
+                1.0 / norm_f * (-kappa[1] * tilde_t + te.cross(tilde_d1));
+
+            gradKappa.Setblock(3, 1, 0, 0, (-1) * Dkappa0De);
+            gradKappa.Setblock(3, 1, 4, 0, Dkappa0De - Dkappa0Df);
+            gradKappa.Setblock(3, 1, 8, 0, Dkappa0Df);
+            gradKappa.Setblock(3, 1, 0, 1, (-1) * Dkappa1De);
+            gradKappa.Setblock(3, 1, 4, 1, Dkappa1De - Dkappa1Df);
+            gradKappa.Setblock(3, 1, 8, 1, Dkappa1Df);
+
+            Vectors kb = curvatureBinormals[vtx];
+
+            gradKappa[3, 0] = -0.5 * kb.dot(m1e.ToVectors());
+            gradKappa[7, 0] = -0.5 * kb.dot(m1f.ToVectors());
+            gradKappa[3, 1] = -0.5 * kb.dot(m2e.ToVectors());
+            gradKappa[7, 1] = -0.5 * kb.dot(m2f.ToVectors());
+            m_value[vtx] = gradKappa;
+        }
+
+        setDependentsDirty();
+    }
+}
+
+public class HessKappas : DependencyNode<List<Tuple<MatrixXs, MatrixXs>>>
+{
+    protected Lengths m_lengths;
+    protected Tangents m_tangents;
+    protected CurvatureBinormals m_curvatureBinormals;
+    protected MaterialFrames1 m_materialFrames1;
+    protected MaterialFrames2 m_materialFrames2;
+    protected Kappas m_kappas;
+
+    public HessKappas(ref Lengths lengths, ref Tangents tangents,
+             ref CurvatureBinormals curvatureBinormals,
+             ref MaterialFrames1 materialFrames1,
+             ref MaterialFrames2 materialFrames2, ref Kappas kappas) : base(new List<Tuple<MatrixXs, MatrixXs>>(), 1, curvatureBinormals.size())
+    {
+        for (int i = 0; i < m_size; i++)
+        {
+            m_value.Add(new Tuple<MatrixXs, MatrixXs>(new MatrixXs(11, 11), new MatrixXs(11, 11)));
+        }
+        m_lengths = lengths;
+        m_tangents = tangents;
+        m_curvatureBinormals = curvatureBinormals;
+        m_materialFrames1 = materialFrames1;
+        m_materialFrames2 = materialFrames2;
+        m_kappas = kappas;
+        m_lengths.addDependent(this);
+        m_tangents.addDependent(this);
+        m_curvatureBinormals.addDependent(this);
+        m_materialFrames1.addDependent(this);
+        m_materialFrames2.addDependent(this);
+        m_kappas.addDependent(this);
+    }
+
+    public Tuple<MatrixXs, MatrixXs> this[int index]
+    {
+        get => m_value[index];
+        set => m_value[index] = value;
+    }
+
+    public string name() { return "HessKeppas"; }
+
+    protected override void compute()
+    {
+        m_value = new List<Tuple<MatrixXs, MatrixXs>>(m_size);
+        for (int i = 0; i < m_size; i++)
+        {
+            m_value.Add(new Tuple<MatrixXs, MatrixXs>(new MatrixXs(11, 11), new MatrixXs(11, 11)));
+        }
+        List<double> lengths = m_lengths.get();
+        List<Vectors> tangents = m_tangents.get();
+        List<Vectors> curvatureBinormals = m_curvatureBinormals.get();
+        List<VectorXs> materialFrames1 = m_materialFrames1.get();
+        List<VectorXs> materialFrames2 = m_materialFrames2.get();
+        List<VectorXs> kappas = m_kappas.get();
+
+        for (int vtx = m_firstValidIndex; vtx < size(); ++vtx)
+        {
+            Tuple<MatrixXs, MatrixXs> HessKappa = m_value[vtx];
+
+            MatrixXs DDkappa1 = HessKappa.Item1;
+            MatrixXs DDkappa2 = HessKappa.Item2;
+
+            DDkappa1.setZero();
+            DDkappa2.setZero();
+
+            double norm_e = lengths[vtx - 1];
+            double norm_f = lengths[vtx];
+            double norm2_e = norm_e * norm_e;  // That's bloody stupid, taking the square of a square root.
+            double norm2_f = norm_f * norm_f;
+
+            Vectors te = tangents[vtx - 1];
+            Vectors tf = tangents[vtx];
+
+            VectorXs m1e = materialFrames1[vtx - 1];
+            VectorXs m2e = materialFrames2[vtx - 1];
+            VectorXs m1f = materialFrames1[vtx];
+            VectorXs m2f = materialFrames2[vtx];
+
+            double chi = 1.0 + te.dot(tf);
+
+            //    assert( chi>0 );
+            if (chi <= 0)
+            {
+                chi = 1e-12;
+            }
+
+            Vectors tilde_t = (te + tf) / chi;
+            Vectors tilde_d1 = ((m1e + m1f) / chi).ToVectors();
+            Vectors tilde_d2 = ((m2e + m2f) / chi).ToVectors();
+
+            VectorXs kappa = kappas[vtx];
+
+            Vectors kb = curvatureBinormals[vtx];
+
+            MatrixXs tt_o_tt = CMath.outerProd(tilde_t, tilde_t);
+            MatrixXs tf_c_d2t_o_tt = CMath.outerProd(tf.cross(tilde_d2), tilde_t);
+            MatrixXs tt_o_tf_c_d2t = tf_c_d2t_o_tt.transpose();
+            MatrixXs kb_o_d2e = CMath.outerProd(kb, m2e.ToVectors());
+            MatrixXs d2e_o_kb = kb_o_d2e.transpose();
+
+            MatrixXs Id = CMath.identity(3);
+
+            {
+                MatrixXs D2kappa1De2 =
+                    1.0 / norm2_e *
+                        (2 * kappa[0] * tt_o_tt - (tf_c_d2t_o_tt + tt_o_tf_c_d2t)) -
+                    kappa[0] / (chi * norm2_e) * (Id - CMath.outerProd(te, te)) +
+                    1.0 / (4.0 * norm2_e) * (kb_o_d2e + d2e_o_kb);
+
+                MatrixXs te_c_d2t_o_tt = CMath.outerProd(te.cross(tilde_d2), tilde_t);
+                MatrixXs tt_o_te_c_d2t = te_c_d2t_o_tt.transpose();
+                MatrixXs kb_o_d2f = CMath.outerProd(kb, m2f.ToVectors());
+                MatrixXs d2f_o_kb = kb_o_d2f.transpose();
+
+                MatrixXs D2kappa1Df2 =
+                    1.0 / norm2_f *
+                        (2 * kappa[0] * tt_o_tt + (te_c_d2t_o_tt + tt_o_te_c_d2t)) -
+                    kappa[0] / (chi * norm2_f) * (Id - CMath.outerProd(tf, tf)) +
+                    1.0 / (4.0 * norm2_f) * (kb_o_d2f + d2f_o_kb);
+
+                MatrixXs D2kappa1DeDf =
+                    -kappa[0] / (chi * norm_e * norm_f) * (Id + CMath.outerProd(te, tf)) +
+                    1.0 / (norm_e * norm_f) *
+                        (2 * kappa[0] * tt_o_tt - tf_c_d2t_o_tt + tt_o_te_c_d2t -
+                         CMath.crossMat(tilde_d2));
+                MatrixXs D2kappa1DfDe = D2kappa1DeDf.transpose();
+
+                double D2kappa1Dthetae2 = -0.5 * kb.dot(m2e.ToVectors());
+                double D2kappa1Dthetaf2 = -0.5 * kb.dot(m2f.ToVectors());
+                Vectors D2kappa1DeDthetae =
+                    1.0 / norm_e *
+                    (0.5 * kb.dot(m1e.ToVectors()) * tilde_t - 1.0 / chi * tf.cross(m1e.ToVectors()));
+                Vectors D2kappa1DeDthetaf =
+                    1.0 / norm_e *
+                    (0.5 * kb.dot(m1f.ToVectors()) * tilde_t - 1.0 / chi * tf.cross(m1f.ToVectors()));
+                Vectors D2kappa1DfDthetae =
+                    1.0 / norm_f *
+                    (0.5 * kb.dot(m1e.ToVectors()) * tilde_t + 1.0 / chi * te.cross(m1e.ToVectors()));
+                Vectors D2kappa1DfDthetaf =
+                    1.0 / norm_f *
+                    (0.5 * kb.dot(m1f.ToVectors()) * tilde_t + 1.0 / chi * te.cross(m1f.ToVectors()));
+
+                DDkappa1.Setblock(3, 3, 0, 0, D2kappa1De2);
+                DDkappa1.Setblock(3, 3, 0, 4, (-1) * D2kappa1De2 + D2kappa1DeDf);
+                DDkappa1.Setblock(3, 3, 4, 0, (-1) * D2kappa1De2 + D2kappa1DfDe);
+                DDkappa1.Setblock(3, 3, 4, 4,
+                    D2kappa1De2 - (D2kappa1DeDf + D2kappa1DfDe) + D2kappa1Df2);
+                DDkappa1.Setblock(3, 3, 0, 8, -1 * D2kappa1DeDf);
+                DDkappa1.Setblock(3, 3, 8, 0, -1 * D2kappa1DfDe);
+                DDkappa1.Setblock(3, 3, 4, 8, D2kappa1DeDf - D2kappa1Df2);
+                DDkappa1.Setblock(3, 3, 8, 4, D2kappa1DfDe - D2kappa1Df2);
+                DDkappa1.Setblock(3, 3, 8, 8, D2kappa1Df2);
+                DDkappa1[3, 3] = D2kappa1Dthetae2;
+                DDkappa1[7, 7] = D2kappa1Dthetaf2;
+                DDkappa1[3, 7] = DDkappa1[7, 3] = 0;
+                DDkappa1.Setblock(3, 1, 0, 3, -1 * D2kappa1DeDthetae);
+                DDkappa1.Setblock(1, 3, 3, 0, DDkappa1.block(3, 1, 0, 3).transpose());
+                DDkappa1.Setblock(3, 1, 4, 3, D2kappa1DeDthetae - D2kappa1DfDthetae);
+                DDkappa1.Setblock(1, 3, 3, 4, DDkappa1.block(3, 1, 4, 3).transpose());
+                DDkappa1.Setblock(3, 1, 8, 3, D2kappa1DfDthetae);
+                DDkappa1.Setblock(1, 3, 3, 8, DDkappa1.block(3, 1, 8, 3).transpose());
+                DDkappa1.Setblock(3, 1, 0, 7, -1 * D2kappa1DeDthetaf);
+                DDkappa1.Setblock(1, 3, 7, 0, DDkappa1.block(3, 1, 0, 7).transpose());
+                DDkappa1.Setblock(3, 1, 4, 7, D2kappa1DeDthetaf - D2kappa1DfDthetaf);
+                DDkappa1.Setblock(1, 3, 7, 4, DDkappa1.block(3, 1, 4, 7).transpose());
+                DDkappa1.Setblock(3, 1, 8, 7, D2kappa1DfDthetaf);
+                DDkappa1.Setblock(1, 3, 7, 8, DDkappa1.block(3, 1, 8, 7).transpose());
+            }
+
+            {
+                MatrixXs tf_c_d1t_o_tt = CMath.outerProd(tf.cross(tilde_d1), tilde_t);
+                MatrixXs tt_o_tf_c_d1t = tf_c_d1t_o_tt.transpose();
+                MatrixXs kb_o_d1e = CMath.outerProd(kb, m1e.ToVectors());
+                MatrixXs d1e_o_kb = kb_o_d1e.transpose();
+
+                MatrixXs D2kappa2De2 =
+                    1.0 / norm2_e *
+                        (2 * kappa[1] * tt_o_tt + (tf_c_d1t_o_tt + tt_o_tf_c_d1t)) -
+                    kappa[1] / (chi * norm2_e) * (Id - CMath.outerProd(te, te)) -
+                    1.0 / (4.0 * norm2_e) * (kb_o_d1e + d1e_o_kb);
+
+                MatrixXs te_c_d1t_o_tt = CMath.outerProd(te.cross(tilde_d1), tilde_t);
+                MatrixXs tt_o_te_c_d1t = te_c_d1t_o_tt.transpose();
+                MatrixXs kb_o_d1f = CMath.outerProd(kb, m1f.ToVectors());
+                MatrixXs d1f_o_kb = kb_o_d1f.transpose();
+
+                MatrixXs D2kappa2Df2 =
+                    1.0 / norm2_f *
+                        (2 * kappa[1] * tt_o_tt - (te_c_d1t_o_tt + tt_o_te_c_d1t)) -
+                    kappa[1] / (chi * norm2_f) * (Id - CMath.outerProd(tf, tf)) -
+                    1.0 / (4.0 * norm2_f) * (kb_o_d1f + d1f_o_kb);
+
+                MatrixXs D2kappa2DeDf =
+                    -kappa[1] / (chi * norm_e * norm_f) * (Id + CMath.outerProd(te, tf)) +
+                    1.0 / (norm_e * norm_f) *
+                        (2 * kappa[1] * tt_o_tt + tf_c_d1t_o_tt - tt_o_te_c_d1t +
+                         CMath.crossMat(tilde_d1));
+                MatrixXs D2kappa2DfDe = D2kappa2DeDf.transpose();
+
+                double D2kappa2Dthetae2 = 0.5 * kb.dot(m1e.ToVectors());
+                double D2kappa2Dthetaf2 = 0.5 * kb.dot(m1f.ToVectors());
+                Vectors D2kappa2DeDthetae =
+                    1.0 / norm_e *
+                    (0.5 * kb.dot(m2e.ToVectors()) * tilde_t - 1.0 / chi * tf.cross(m2e.ToVectors()));
+                Vectors D2kappa2DeDthetaf =
+                    1.0 / norm_e *
+                    (0.5 * kb.dot(m2f.ToVectors()) * tilde_t - 1.0 / chi * tf.cross(m2f.ToVectors()));
+                Vectors D2kappa2DfDthetae =
+                    1.0 / norm_f *
+                    (0.5 * kb.dot(m2e.ToVectors()) * tilde_t + 1.0 / chi * te.cross(m2e.ToVectors()));
+                Vectors D2kappa2DfDthetaf =
+                    1.0 / norm_f *
+                    (0.5 * kb.dot(m2f.ToVectors()) * tilde_t + 1.0 / chi * te.cross(m2f.ToVectors()));
+
+                DDkappa2.Setblock(3, 3, 0, 0, D2kappa2De2);
+                DDkappa2.Setblock(3, 3, 0, 4, (-1) * D2kappa2De2 + D2kappa2DeDf);
+                DDkappa2.Setblock(3, 3, 4, 0, (-1) * D2kappa2De2 + D2kappa2DfDe);
+                DDkappa2.Setblock(3, 3, 4, 4,
+                    D2kappa2De2 - (D2kappa2DeDf + D2kappa2DfDe) + D2kappa2Df2);
+                DDkappa2.Setblock(3, 3, 0, 8, -1 * D2kappa2DeDf);
+                DDkappa2.Setblock(3, 3, 8, 0, -1 * D2kappa2DfDe);
+                DDkappa2.Setblock(3, 3, 4, 8, D2kappa2DeDf - D2kappa2Df2);
+                DDkappa2.Setblock(3, 3, 8, 4, D2kappa2DfDe - D2kappa2Df2);
+                DDkappa2.Setblock(3, 3, 8, 8, D2kappa2Df2);
+                DDkappa2[3, 3] = D2kappa2Dthetae2;
+                DDkappa2[7, 7] = D2kappa2Dthetaf2;
+                DDkappa2[3, 7] = DDkappa2[7, 3] = 0;
+                DDkappa2.Setblock(3, 1, 0, 3, -1 * D2kappa2DeDthetae);
+                DDkappa2.Setblock(1, 3, 3, 0, DDkappa2.block(3, 1, 0, 3).transpose());
+                DDkappa2.Setblock(3, 1, 4, 3, D2kappa2DeDthetae - D2kappa2DfDthetae);
+                DDkappa2.Setblock(1, 3, 3, 4, DDkappa2.block(3, 1, 4, 3).transpose());
+                DDkappa2.Setblock(3, 1, 8, 3, D2kappa2DfDthetae);
+                DDkappa2.Setblock(1, 3, 3, 8, DDkappa2.block(3, 1, 8, 3).transpose());
+                DDkappa2.Setblock(3, 1, 0, 7, -1 * D2kappa2DeDthetaf);
+                DDkappa2.Setblock(1, 3, 7, 0, DDkappa2.block(3, 1, 0, 7).transpose());
+                DDkappa2.Setblock(3, 1, 4, 7, D2kappa2DeDthetaf - D2kappa2DfDthetaf);
+                DDkappa2.Setblock(1, 3, 7, 4, DDkappa2.block(3, 1, 4, 7).transpose());
+                DDkappa2.Setblock(3, 1, 8, 7, D2kappa2DfDthetaf);
+                DDkappa2.Setblock(1, 3, 7, 8, DDkappa2.block(3, 1, 8, 7).transpose());
+            }
+
+            HessKappa = new Tuple<MatrixXs, MatrixXs>(DDkappa1, DDkappa2);
+            m_value[vtx] = HessKappa;
+        }
+
+        setDependentsDirty();
+    }
+}
+
 public class Twists : DependencyNode<List<double>>
 {
     private ReferenceTwists m_refTwists;
     private DOFs m_dofs;
 
-    public Twists(ref ReferenceTwists refTwists, ref DOFs dofs) : base(new List<double>(dofs.getNumEdges()), 1, dofs.getNumEdges())
+    public Twists(ref ReferenceTwists refTwists, ref DOFs dofs) : base(new List<double>(new double[dofs.getNumEdges()]), 1, dofs.getNumEdges())
     {
         m_refTwists = refTwists;
         m_dofs = dofs;
@@ -362,6 +728,151 @@ public class Twists : DependencyNode<List<double>>
         for (int vtx = m_firstValidIndex; vtx < size(); ++vtx)
         {
             m_value[vtx] = refTwists[vtx] + dofs[4 * vtx + 3] - dofs[4 * vtx - 1];
+        }
+
+        setDependentsDirty();
+    }
+}
+
+public class GradTwists : DependencyNode<List<Vectors>>
+{
+    protected Lengths m_lengths;
+    protected CurvatureBinormals m_curvatureBinormals;
+
+    public GradTwists(ref Lengths lengths, ref CurvatureBinormals curvatureBinormals) : base(new List<Vectors>(), 1, lengths.size())
+    {
+        for (int i = 0; i < m_size; i++)
+        {
+            m_value.Add(new Vectors(11));
+        }
+        m_lengths = lengths;
+        m_curvatureBinormals = curvatureBinormals;
+        m_lengths.addDependent(this);
+        m_curvatureBinormals.addDependent(this);
+    }
+
+    public Vectors this[int index]
+    {
+        get => m_value[index];
+        set => m_value[index] = value;
+    }
+
+    public string name() { return "GradTwists"; }
+
+    protected override void compute()
+    {
+        m_value = new List<Vectors>(m_size);
+        for (int i = 0; i < m_size; i++)
+        {
+            m_value.Add(new Vectors(11));
+        }
+
+        List<Vectors> curvatureBinormals = m_curvatureBinormals.get();
+        List<double> lengths = m_lengths.get();
+
+        for (int vtx = m_firstValidIndex; vtx < size(); ++vtx)
+        {
+            VectorXs Dtwist = m_value[vtx].ToVectorXs();
+            Dtwist.setZero();
+
+            Vectors kb = curvatureBinormals[vtx];
+
+            Dtwist.SetSegment(3, 0, -0.5 / lengths[vtx - 1] * kb);
+            Dtwist.SetSegment(3, 8, 0.5 / lengths[vtx] * kb);
+            Dtwist.SetSegment(3, 4, (-1) * (Dtwist.segment(3, 0) + Dtwist.segment(3, 8)));
+            Dtwist[3] = -1;
+            Dtwist[7] = 1;
+            m_value[vtx] = Dtwist.ToVectors();
+        }
+
+        setDependentsDirty();
+    }
+}
+
+public class HessTwists : DependencyNode<List<MatrixXs>>
+{
+    protected Tangents m_tangents;
+    protected Lengths m_lengths;
+    protected CurvatureBinormals m_curvatureBinormals;
+
+    public HessTwists(ref Tangents tangents, ref Lengths lengths,
+             ref CurvatureBinormals curvatureBinormals) : base(new List<MatrixXs>(), 1, lengths.size())
+    {
+        for (int i = 0; i < m_size; i++)
+        {
+            m_value.Add(new MatrixXs(11, 11));
+        }
+        m_tangents = tangents;
+        m_lengths = lengths;
+        m_curvatureBinormals = curvatureBinormals;
+        m_tangents.addDependent(this);
+        m_lengths.addDependent(this);
+        m_curvatureBinormals.addDependent(this);
+    }
+
+    public MatrixXs this[int index]
+    {
+        get => m_value[index];
+        set => m_value[index] = value;
+    }
+
+    public string name() { return "HessTwists"; }
+
+    protected override void compute()
+    {
+        m_value = new List<MatrixXs>(m_size);
+        for (int i = 0; i < m_size; i++)
+        {
+            m_value.Add(new MatrixXs(11, 11));
+        }
+        List<Vectors> tangents = m_tangents.get();
+        List<double> lengths = m_lengths.get();
+        List<Vectors> curvatureBinormals = m_curvatureBinormals.get();
+
+        for (int vtx = m_firstValidIndex; vtx < size(); ++vtx)
+        {
+            MatrixXs DDtwist = m_value[vtx];
+
+            DDtwist.setZero();
+
+            Vectors te = tangents[vtx - 1];
+            Vectors tf = tangents[vtx];
+            double norm_e = lengths[vtx - 1];
+            double norm_f = lengths[vtx];
+            Vectors kb = curvatureBinormals[vtx];
+
+            double chi = 1 + te.dot(tf);
+
+            //    assert( chi>0 );
+            if (chi <= 0)
+            {
+                chi = 1e-12;
+            }
+
+            Vectors tilde_t = 1.0 / chi * (te + tf);
+
+            MatrixXs D2mDe2 =
+                -0.25 / (norm_e * norm_e) *
+                (CMath.outerProd(kb, te + tilde_t) + CMath.outerProd(te + tilde_t, kb));
+            MatrixXs D2mDf2 =
+                -0.25 / (norm_f * norm_f) *
+                (CMath.outerProd(kb, tf + tilde_t) + CMath.outerProd(tf + tilde_t, kb));
+            MatrixXs D2mDeDf =
+                0.5 / (norm_e * norm_f) *
+                (2.0 / chi * CMath.crossMat(te) - CMath.outerProd(kb, tilde_t));
+            MatrixXs D2mDfDe = D2mDeDf.transpose();
+
+            DDtwist.Setblock(3, 3, 0, 0, D2mDe2);
+            DDtwist.Setblock(3, 3, 0, 4, -1 * D2mDe2 + D2mDeDf);
+            DDtwist.Setblock(3, 3, 4, 0, -1 * D2mDe2 + D2mDfDe);
+            DDtwist.Setblock(3, 3, 4, 4, D2mDe2 - (D2mDeDf + D2mDfDe) + D2mDf2);
+            DDtwist.Setblock(3, 3, 0, 8, -1 * D2mDeDf);
+            DDtwist.Setblock(3, 3, 8, 0, -1 * D2mDfDe);
+            DDtwist.Setblock(3, 3, 8, 4, D2mDfDe - D2mDf2);
+            DDtwist.Setblock(3, 3, 4, 8, D2mDeDf - D2mDf2);
+            DDtwist.Setblock(3, 3, 8, 8, D2mDf2);
+
+            m_value[vtx] = DDtwist;
         }
 
         setDependentsDirty();

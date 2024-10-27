@@ -4,18 +4,21 @@ using UnityEngine;
 
 public class SceneStepper
 {
-    private List<double> m_timing_statistics;
+    protected List<double> m_timing_statistics;
 
-    private VectorXs m_old_v;
-    private VectorXs m_a;
-    private VectorXs m_next_x;
+    protected VectorXs m_old_v;
+    protected VectorXs m_a;
+    protected VectorXs m_next_x;
 
-    public SceneStepper()
+    protected int DIM;
+
+    public SceneStepper(int dim = 3)
     {
         m_timing_statistics = new List<double>();
         m_old_v = new VectorXs();
         m_a = new VectorXs();
         m_next_x = new VectorXs();
+        DIM = dim;
     }
 
     public VectorXs getAcceleration()

@@ -27,8 +27,12 @@ public class HairInterface : MonoBehaviour
         loadHairSimulation.loadDERSimulation();
         for (int i = 0; i < hairParticleCount; i++)
         {
+            Debug.Log("Particle " + i);
             Vectors v = loadHairSimulation.scene.getPosition(i).Clone();
             Debug.Log("x: " + v[0].ToString() + " y: " + v[1].ToString() + " z: " + v[2].ToString());
+
+            Vectors vel = loadHairSimulation.scene.getVelocity(i);
+            Debug.Log("vx : " + vel[0] + " vy : " + vel[1] + " vz : " + vel[2]);
         }
     }
 
