@@ -66,7 +66,7 @@ public enum MASS_UPDATE_MODE
     MUM_COUNT
 }
 
-//[Serializable]
+[Serializable]
 public class WetHairParameter
 {
     public double dt;

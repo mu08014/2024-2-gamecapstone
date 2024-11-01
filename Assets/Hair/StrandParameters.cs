@@ -27,6 +27,7 @@ public class StrandEquilibriumParameters
     }
 }
 
+[Serializable]
 public class StrandParameters
 {
     public double m_density;

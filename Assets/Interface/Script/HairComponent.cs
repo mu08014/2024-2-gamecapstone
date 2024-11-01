@@ -20,13 +20,22 @@ public class HairComponent : MonoBehaviour {
      *Vector3 Color -> Color.black : Vector3 class to Unity Color class for only managing Col
      */
     [SerializeField]
-    private List<StrandParameters> StrandHairs;   //Parameter list for A strand hair set
+    private List<StrandParameters> strandHairs;   //Parameter list for A strand hair set
 
-    private bool IsAnyHairExist = false;
+    private bool HairExist = false;
 
     public List<StrandParameters> GetStrandHairParameters()
     {
-        return StrandHairs;
+        return strandHairs;
+    }
+
+    public int GetNumOfHairPram()
+    {
+        return strandHairs.Count;
+    }
+    public bool IsAnyHairExist()
+    {
+        return HairExist;
     }
 
 
@@ -48,7 +57,7 @@ public class HairComponent : MonoBehaviour {
     // Update is called once per frame
     void FixedUpdate()
     {
-        if (IsAnyHairExist)
+        if (HairExist)
         {
             //Call WetHairCore::StepSystem ( Needed to be modified? )
         }
