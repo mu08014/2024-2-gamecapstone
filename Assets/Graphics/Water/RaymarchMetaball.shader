@@ -4,6 +4,9 @@ Shader "Unlit/RaymarchMetaball"
     {
         _MainTex ("Texture", 2D) = "white" {}
         _Color ("Color", Color) = (1, 1, 1, 1)
+        _Cube("Reflection Map", Cube) = ""{}
+        _Radius("Radius", float) = 0.5
+        _K("K", float) = 0.2
     }
     SubShader
     {
@@ -22,7 +25,7 @@ Shader "Unlit/RaymarchMetaball"
             #include "UnityCG.cginc"
 
             #define MAX_STEPS 100
-            #define MAX_DIST 100
+            #define MAX_DIST 50
             #define SURF_DIST 0.001
 
             struct appdata
@@ -41,8 +44,15 @@ Shader "Unlit/RaymarchMetaball"
             };
 
             sampler2D _MainTex;
+            samplerCUBE _Cube;
             float4 _MainTex_ST;
             sampler2D _CameraDepthTexture;
+            float _Radius;
+            float _K;
+
+            StructuredBuffer<float3> _ParticlePoses;
+            int _ParticleCount = 0;
+
             float4 _Color;
 
             v2f vert (appdata v)
@@ -50,9 +60,11 @@ Shader "Unlit/RaymarchMetaball"
                 v2f o;
                 o.vertex = UnityObjectToClipPos(v.vertex);
                 o.uv = TRANSFORM_TEX(v.uv, _MainTex);
-                o.ro = mul(unity_WorldToObject, float4(_WorldSpaceCameraPos, 1));
-                o.hitPos = v.vertex;
-                o.light = mul(unity_WorldToObject, _WorldSpaceLightPos0);
+
+                // calculate raymarch in world coord
+                o.ro = float4(_WorldSpaceCameraPos, 1);
+                o.hitPos = mul(unity_ObjectToWorld, v.vertex);
+                o.light = _WorldSpaceLightPos0;
                 return o;
             }
 
@@ -61,26 +73,24 @@ Shader "Unlit/RaymarchMetaball"
             }
 
             // exponential
-            float smin( float a, float b, float c, float k )
+            float smin( float a, float b, float k )
             {
                 k *= 1.0;
-                float r = exp2(-a/k) + exp2(-b/k) + exp2(-c/k);
+                float r = exp2(-a/k) + exp2(-b/k);
                 return -k*log2(r);
             }
 
             float GetDist(float3 p) {
-                float3 o1 = float3(0.4, 0, 0);
-                float3 o2 = float3(-0.4, 0, 0);
-                float3 o3 = float3(0, 0.3, 0);
-                
-                float d1 = length(p - o1) - 0.2; // sphere 1
-                float d2 = length(p - o2) - 0.2; // sphere 2
-                float d3 = length(p - o3) - 0.2;
-                float d = smin(d1, d2, d3, 0.1);
-
-                //d = -Metaball(p, float3(0, 0, 0), 0.5) + 1;
-                //d += -Metaball(p, float3(0.2, 0, 0), 0.5) + 1;
-
+                float d = 0;
+                {
+                    float d1 = length(p - _ParticlePoses[0]) - _Radius;
+                    float d2 = length(p - _ParticlePoses[1]) - _Radius;
+                    d = smin(d1, d2, _K);
+                }
+                for (int i = 2; i < _ParticleCount; i++) {
+                    float d1 = length(p - _ParticlePoses[i]) - _Radius;
+                    d = smin(d, d1, _K);
+                }
                 return d;
             }
 
@@ -123,14 +133,9 @@ Shader "Unlit/RaymarchMetaball"
                 } else {
                     float3 p = ro + rd * d;
                     float3 n = GetNormal(p);
-                    float cosNR = dot(n, normalize(ro));
-                    float sinNR = pow(sqrt(1 - cosNR * cosNR), 3);
-                    col.w = 1;
-                    col.rgba = _Color.rgba * sinNR;
-                    
+
                     // depth test
-                    float4 world = mul(unity_ObjectToWorld, float4(p, 1));
-                    float4 view = mul(UNITY_MATRIX_V, world);
+                    float4 view = mul(UNITY_MATRIX_V, float4(p, 1));
                     float4 proj = mul(UNITY_MATRIX_P, view);
                     proj /= proj.w;
 
@@ -138,11 +143,29 @@ Shader "Unlit/RaymarchMetaball"
                     if (proj.z < sceneDepth)
                         discard;
 
+                    // color
+                    col.rgb = _Color;
+                    col.a = 0.1;
+                    
+                    // fresnel
+                    float cosNR = saturate(dot(n, normalize(-rd)));
+                    float r0 = pow((1.0003 - 1.33) / (1.0003 + 1.33), 2);
+                    float r = r0 + (1 - r0) * pow(1 - cosNR, 2);
+                    
+                    // environment
+                    float3 refl = reflect(rd, n);
+                    half4 ecol = UNITY_SAMPLE_TEXCUBE(unity_SpecCube0, refl); 
+                    half3 finalEColor = DecodeHDR(ecol, unity_SpecCube0_HDR);
+                    //finalEColor = texCUBE(_Cube, n);
+
+                    col.a += r;
+                    col.rgb = finalEColor * r;
+
                     // specular
                     float3 h = -normalize(rd - i.light);
-                    float sp = pow(saturate(dot(h, n)), 20);
-                    col += sp * 0.7;
-                }
+                    float sp = pow(saturate(dot(h, n)), 1000);
+                    col += sp;
+                } 
                 return col;
             }
 
