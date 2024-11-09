@@ -26,13 +26,21 @@ public class SceneStepper
         return m_a;
     }
 
-    public void accept(ref TwoDScene scene, double dt)
+    public virtual void accept(ref TwoDScene scene, double dt)
     {
         VectorXs x = scene.getX();
         VectorXs v = scene.getV();
 
-        v = (m_next_x - x) / dt;
-        x = m_next_x;
+        for (int i = 0; i < v.Size; i++)
+        {
+            v[i] = (m_next_x[i] - x[i]) / dt;
+        }
+        for (int i = 0; i < x.Size; i++)
+        {
+            x[i] = m_next_x[i];
+        }
+        //v = (m_next_x - x) / dt;
+        //x = m_next_x;
         m_a = (v - m_old_v) / dt;
         m_old_v = v.Clone();
     }
@@ -47,7 +55,7 @@ public class SceneStepper
         return m_next_x;
     }
 
-    public void PostStepScene(ref TwoDScene scene, double dt)
+    public virtual void PostStepScene(ref TwoDScene scene, double dt)
     {
         scene.postCompute(dt);
     }

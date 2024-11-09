@@ -646,6 +646,7 @@ public class TwoDScene
         {
             if (!isFixed(i)) continue;
 
+            /* 여기서 물체 전체 움직이는 거에 대한 fixed point 속도 조정
             int sg_idx = m_script_group[i];
             if (sg_idx < 0 || sg_idx >= m_scripted_translate.Count) continue;
 
@@ -660,6 +661,7 @@ public class TwoDScene
             VectorXs trans_x0 = (q * p0 * Quaternion.Inverse(q)) + t;
 
             m_v.SetSegment(getDof(i), DIM, (trans_x0 - xstar) / dt);
+            */
         }
 
         int nstrand = m_strandEquilibriumParameters.Count;

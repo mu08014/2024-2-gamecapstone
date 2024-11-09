@@ -145,6 +145,7 @@ public class LoadHairSimulation
                 scene.setVelocity(vtx, vel.ToVectors());
 
                 bool fixe = false;
+                fixe = hairparticle.GetComponent<HairParticle>().Fix;
                 scene.setFixed(vtx, fixe);
 
                 if (vtx !=  globalvtx)
@@ -212,16 +213,16 @@ public class LoadHairSimulation
         for (int i = 0; i < parameter.hairsteps; ++i)
         {
             //scene.updatePolygonalStructure(dt); Polygonal Cohesion 구현 후 작업
-            Debug.Log("vx : " + scene.getVelocity(0)[0] + " vy : " + scene.getVelocity(0)[1] + " vz : " + scene.getVelocity(0)[2]);
             scene.updateStrandStartStates();
-            Debug.Log("vx : " + scene.getVelocity(0)[0] + " vy : " + scene.getVelocity(0)[1] + " vz : " + scene.getVelocity(0)[2]);
+
             ((StrandCompliantManager)scene_stepper).stepScene(ref scene, hairsubstep, true);
-            Debug.Log("vx : " + scene.getVelocity(0)[0] + " vy : " + scene.getVelocity(0)[1] + " vz : " + scene.getVelocity(0)[2]);
+
             ((StrandCompliantManager)scene_stepper).accept(ref scene, hairsubstep);
-            Debug.Log("vx : " + scene.getVelocity(0)[0] + " vy : " + scene.getVelocity(0)[1] + " vz : " + scene.getVelocity(0)[2]);
+
             ((StrandCompliantManager)scene_stepper).PostStepScene(ref scene, hairsubstep);
-            Debug.Log("vx : " + scene.getVelocity(0)[0] + " vy : " + scene.getVelocity(0)[1] + " vz : " + scene.getVelocity(0)[2]);
+
         }
-        Debug.Log("vx : " + scene.getVelocity(0)[0] + " vy : " + scene.getVelocity(0)[1] + " vz : " + scene.getVelocity(0)[2]);
+        Debug.Log("첫번째 머리카락 파티클 속도 vx : " + scene.getVelocity(0)[0] + " vy : " + scene.getVelocity(0)[1] + " vz : " + scene.getVelocity(0)[2]);
+
     }
 }
