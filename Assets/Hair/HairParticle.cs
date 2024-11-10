@@ -6,6 +6,7 @@ public class HairParticle : MonoBehaviour
 {
     private Vector3 m_Position;
     private Vector3 m_Velocity;
+    private bool m_Fix;
 
     public Vector3 Position
     {
@@ -31,10 +32,23 @@ public class HairParticle : MonoBehaviour
         }
     }
 
+    public bool Fix
+    {
+        get
+        {
+            return m_Fix;
+        }
+        set
+        {
+            m_Fix = value;
+        }
+    }
+
     public HairParticle(double x, double y, double z, double vx, double vy, double vz)
     {
         m_Position = new Vector3((float)x, (float)y, (float)z);
         m_Velocity = new Vector3((float)x, (float)y, (float)z);
+        m_Fix = false;
     }
 
     void Awake()
