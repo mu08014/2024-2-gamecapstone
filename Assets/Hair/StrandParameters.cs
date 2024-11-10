@@ -127,8 +127,7 @@ public class StrandParameters
         double m_radius = m_physicalRadius.get();
         m_viscousKs = CMath.M_PI * m_radius * m_radius * 3 * m_viscosity / dt;
         m_viscousKt = CMath.M_PI_4 * m_radius * m_radius *
-            (m_radius * m_radius + m_radius * m_radius) * m_viscosity /
-            dt;
+            (m_radius * m_radius + m_radius * m_radius) * m_viscosity / dt;
         m_viscousBendingCoefficientBase = 3 * m_viscosity / dt;
     }
 

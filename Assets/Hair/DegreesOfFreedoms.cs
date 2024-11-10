@@ -77,7 +77,10 @@ public class Edges : DependencyNode<List<Vectors>>
 
     public Vectors this[int index]
     {
-        get => m_value[index];
+        get
+        {
+            return get()[index];
+        }
         set => m_value[index] = value;
     }
 
@@ -90,7 +93,7 @@ public class Edges : DependencyNode<List<Vectors>>
         {
             m_value.Add(new Vectors(3));
         }
-        VectorXs dofs = m_dofs.get().Clone();
+        VectorXs dofs = m_dofs.get();
         for (ushort vtx = m_firstValidIndex; vtx < size(); ++vtx)
         {
             m_value[vtx] = dofs.segment(4 * (vtx + 1), 3) - dofs.segment(4 * vtx, 3);
@@ -112,7 +115,10 @@ public class Lengths : DependencyNode<List<double>>
 
     public double this[int index]
     {
-        get => m_value[index];
+        get
+        {
+            return get()[index];
+        }
         set => m_value[index] = value;
     }
 
@@ -151,7 +157,10 @@ public class Tangents : DependencyNode<List<Vectors>>
 
     public Vectors this[int index]
     {
-        get => m_value[index];
+        get
+        {
+            return get()[index];
+        }
         set => m_value[index] = value;
     }
 
@@ -187,7 +196,10 @@ public class CurvatureBinormals : DependencyNode<List<Vectors>>
 
     public Vectors this[int index]
     {
-        get => m_value[index];
+        get
+        {
+            return get()[index];
+        }
         set => m_value[index] = value;
     }
 
@@ -266,7 +278,7 @@ public class TrigThetas : DependencyNode<Tuple<VectorXs, VectorXs>>
             thetasMap[i] = dofs[i * 4 + 3];
         }
 
-        VectorXs thetaVec = thetasMap.Clone();
+        VectorXs thetaVec = thetasMap;
         // Compute their sine and cosine
         // assert( typeid(double) == typeid(VecX::scalar) );
         vdSinCos(
@@ -304,7 +316,10 @@ public class Kappas : DependencyNode<List<VectorXs>>
 
     public VectorXs this[int index]
     {
-        get => m_value[index];
+        get
+        {
+            return get()[index];
+        }
         set => m_value[index] = value;
     }
 
@@ -371,7 +386,10 @@ public class GradKappas : DependencyNode<List<MatrixXs>>
 
     public MatrixXs this[int index]
     {
-        get => m_value[index];
+        get
+        {
+            return get()[index];
+        }
         set => m_value[index] = value;
     }
 
@@ -484,7 +502,10 @@ public class HessKappas : DependencyNode<List<Tuple<MatrixXs, MatrixXs>>>
 
     public Tuple<MatrixXs, MatrixXs> this[int index]
     {
-        get => m_value[index];
+        get
+        {
+            return get()[index];
+        }
         set => m_value[index] = value;
     }
 
@@ -713,7 +734,10 @@ public class Twists : DependencyNode<List<double>>
 
     public double this[int index]
     {
-        get => m_value[index];
+        get
+        {
+            return get()[index];
+        }
         set => m_value[index] = value;
     }
 
@@ -753,7 +777,10 @@ public class GradTwists : DependencyNode<List<Vectors>>
 
     public Vectors this[int index]
     {
-        get => m_value[index];
+        get
+        {
+            return get()[index];
+        }
         set => m_value[index] = value;
     }
 
@@ -777,9 +804,9 @@ public class GradTwists : DependencyNode<List<Vectors>>
 
             Vectors kb = curvatureBinormals[vtx];
 
-            Dtwist.SetSegment(3, 0, -0.5 / lengths[vtx - 1] * kb);
-            Dtwist.SetSegment(3, 8, 0.5 / lengths[vtx] * kb);
-            Dtwist.SetSegment(3, 4, (-1) * (Dtwist.segment(3, 0) + Dtwist.segment(3, 8)));
+            Dtwist.SetSegment(0, 3, -0.5 / lengths[vtx - 1] * kb);
+            Dtwist.SetSegment(8, 3, 0.5 / lengths[vtx] * kb);
+            Dtwist.SetSegment(4, 3, (-1) * (Dtwist.segment(0, 3) + Dtwist.segment(8, 3)));
             Dtwist[3] = -1;
             Dtwist[7] = 1;
             m_value[vtx] = Dtwist.ToVectors();
@@ -812,7 +839,10 @@ public class HessTwists : DependencyNode<List<MatrixXs>>
 
     public MatrixXs this[int index]
     {
-        get => m_value[index];
+        get
+        {
+            return get()[index];
+        }
         set => m_value[index] = value;
     }
 
@@ -898,7 +928,10 @@ public class MaterialFrames1 : DependencyNode<List<VectorXs>>
 
     public VectorXs this[int index]
     {
-        get => m_value[index];
+        get
+        {
+            return get()[index];
+        }
         set => m_value[index] = value;
     }
 
@@ -954,7 +987,10 @@ public class MaterialFrames2 : DependencyNode<List<VectorXs>>
 
     public VectorXs this[int index]
     {
-        get => m_value[index];
+        get
+        {
+            return get()[index];
+        }
         set => m_value[index] = value;
     }
 
@@ -1005,7 +1041,10 @@ public class ReferenceFrames1 : DependencyNode<List<VectorXs>>
 
     public VectorXs this[int index]
     {
-        get => m_value[index];
+        get
+        {
+            return get()[index];
+        }
         set => m_value[index] = value;
     }
 
@@ -1066,9 +1105,10 @@ public class ReferenceFrames1 : DependencyNode<List<VectorXs>>
                                                         currentTangent).ToVectorXs();
             VectorXs v = m_value[vtx];
             CMath.orthoNormalize(ref v, currentTangent);
+            m_value[vtx] = v;
 
             // Store the current tangent for the next time-parallel transportation
-            previousTangent = currentTangent;
+            m_previousTangents[vtx] = currentTangent;
         }
 
         setDependentsDirty();
@@ -1091,7 +1131,10 @@ public class ReferenceFrames2 : DependencyNode<List<VectorXs>>
 
     public VectorXs this[int index]
     {
-        get => m_value[index];
+        get
+        {
+            return get()[index];
+        }
         set => m_value[index] = value;
     }
 
@@ -1099,13 +1142,14 @@ public class ReferenceFrames2 : DependencyNode<List<VectorXs>>
 
     protected override void compute()
     {
-        m_value = new List<VectorXs>(new VectorXs[m_size]);
+        m_value = new List<VectorXs>(m_size);
+        for (int vtx = 0; vtx < m_size; ++vtx)
+        {
+            m_value.Add(new VectorXs(3));
+        }
         List<Vectors> tangents = m_tangents.get();
         List<VectorXs> referenceFrames1 = m_referenceFrames1.get();
-        for (int vtx = 0; vtx < m_firstValidIndex; ++vtx)
-        {
-            m_value[vtx].setZero();
-        }
+
         for (int vtx = m_firstValidIndex; vtx < size(); ++vtx)
         {
             m_value[vtx] = tangents[vtx].cross(referenceFrames1[vtx].ToVectors()).ToVectorXs();
@@ -1131,7 +1175,10 @@ public class ReferenceTwists : DependencyNode<List<double>>
 
     public double this[int index]
     {
-        get => m_value[index];
+        get
+        {
+            return get()[index];
+        }
         set => m_value[index] = value;
     }
 
@@ -1161,6 +1208,86 @@ public class ReferenceTwists : DependencyNode<List<double>>
 
             // compute increment to reference twist to align reference frames
             m_value[vtx] = beforeTwist + CMath.signedAngle(ut, u1.ToVectors(), tangent);
+        }
+
+        setDependentsDirty();
+    }
+}
+
+public class BendingProducts : DependencyNode<List<MatrixXs>>
+{
+    private BendingMatrixBase m_bendingMatrixBase;
+    private GradKappas m_gradKappas;
+
+
+    public BendingProducts(ref BendingMatrixBase bendingMatrixBase, ref GradKappas gradKappas) : base(1, gradKappas.size())
+    {
+        m_bendingMatrixBase = bendingMatrixBase;
+        m_gradKappas = gradKappas;
+        m_bendingMatrixBase.addDependent(this);
+        m_gradKappas.addDependent(this);
+
+        compute();
+    }
+
+    public MatrixXs this[int index]
+    {
+        get
+        {
+            return get()[index];
+        }
+        set => m_value[index] = value;
+    }
+
+    public string name() { return "BendingProducts"; }
+
+    protected override void compute()
+    {
+        m_value = new List<MatrixXs>(m_size);
+        for (int i = 0; i < m_size; i++)
+        {
+            m_value.Add(new MatrixXs(11, 11));
+        }
+
+        MatrixXs bendingMatrix = m_bendingMatrixBase.get();
+        List<MatrixXs> gradKappas = m_gradKappas.get();
+
+        for (int vtx = m_firstValidIndex; vtx < size(); ++vtx)
+        {
+            CMath.symBProduct(11, m_value[vtx], bendingMatrix, gradKappas[vtx]);
+        }
+
+        setDependentsDirty();
+    }
+}
+
+public class GradTwistsSquared : DependencyNode<List<MatrixXs>>
+{
+    private GradTwists m_gradTwists;
+    public GradTwistsSquared(ref GradTwists gradTwists) : base(1, gradTwists.size())
+    {
+        m_gradTwists = gradTwists;
+        m_gradTwists.addDependent(this);
+
+        compute();
+    }
+
+    public string name() { return "GradTwistsSquared"; }
+
+    protected override void compute()
+    {
+        m_value = new List<MatrixXs>(m_size);
+        for (int i = 0; i < m_size; ++i)
+        {
+            m_value.Add(new MatrixXs(11, 11));
+        }
+
+        List<Vectors> gradTwists = m_gradTwists.get();
+
+        for (int vtx = m_firstValidIndex; vtx < size(); ++vtx)
+        {
+            Vectors gradTwist = gradTwists[vtx];
+            m_value[vtx] = CMath.matProduct(gradTwist, gradTwist);
         }
 
         setDependentsDirty();

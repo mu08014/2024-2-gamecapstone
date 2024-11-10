@@ -239,7 +239,7 @@ public class TwoDScene
 
     private List<VectorXs> m_scripted_translate;
 
-    private List<Quaternion> m_scripted_rotation;
+    private List<VectorXs> m_scripted_rotation;
 
     private List<int> m_particle_to_hair_local_indices;
 
@@ -646,22 +646,28 @@ public class TwoDScene
         {
             if (!isFixed(i)) continue;
 
-            /* 여기서 물체 전체 움직이는 거에 대한 fixed point 속도 조정
+            //여기서 물체 전체 움직이는 거에 대한 fixed point 속도 조정
+            /*
             int sg_idx = m_script_group[i];
             if (sg_idx < 0 || sg_idx >= m_scripted_translate.Count) continue;
 
-            Quaternion q = m_scripted_rotation[sg_idx];
+            VectorXs q = m_scripted_rotation[sg_idx];
             VectorXs t = m_scripted_translate[sg_idx];
 
-            VectorXs x0 = new VectorXs(DIM);
-            x0.SetSegment(0, DIM, m_base_x.segment(getDof(i), DIM));
-            VectorXs xstar = new VectorXs(DIM);
-            xstar.SetSegment(0, DIM, m_x.segment(getDof(i), DIM));
-            Quaternion p0 = new Quaternion((float)x0[0], (float)x0[1], (float)x0[2], 0.0f);
-            VectorXs trans_x0 = (q * p0 * Quaternion.Inverse(q)) + t;
-
-            m_v.SetSegment(getDof(i), DIM, (trans_x0 - xstar) / dt);
+            VectorXs x0 = new VectorXs(DIM + 1);
+            x0.SetSegment(0, DIM + 1, m_base_x.segment(getDof(i), DIM + 1));
+            VectorXs xstar = new VectorXs(DIM + 1);
+            xstar.SetSegment(0, DIM + 1, m_x.segment(getDof(i), DIM + 1));
+            VectorXs p0 = new VectorXs(4);
+            p0[0] = x0[0];
+            p0[1] = x0[1];
+            p0[2] = x0[2];
+            p0[3] = 0.0f;
+            VectorXs trans_x0 = (q * p0 * q.qinverse()) + t;
+            
+            m_v.SetSegment(getDof(i), DIM + 1, (trans_x0 - xstar) / dt);
             */
+
         }
 
         int nstrand = m_strandEquilibriumParameters.Count;
@@ -690,6 +696,13 @@ public class TwoDScene
             m_strands[i].updateRestShape(dof_restshape, 0);
             m_strandEquilibriumParameters[i].m_dirty = false;
         }
+    }
+
+    public void initializeScriptedGroup()
+    {
+        m_scripted_translate = new List<VectorXs>(0);
+
+        applyScript(0);
     }
 
     public bool isFixed(int particle)

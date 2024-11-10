@@ -23,7 +23,7 @@ public class LoadHairSimulation
         //loadSpringForces()
         //loadDragDampingForces()
         //loadLinearSpringForces()
-        //loadLinearBenginForces()
+        //loadLinearBendingForces()
 
         //loadFluidSim()
 
@@ -38,7 +38,7 @@ public class LoadHairSimulation
 
         scene.updateHairConnectivity();
         scene.categorizeForces();
-        //scene.initializesScriptedGroup(scripts);
+        scene.initializeScriptedGroup();
     }
 
     public void loadStrandParameters(ref TwoDScene scene)
@@ -223,6 +223,5 @@ public class LoadHairSimulation
 
         }
         Debug.Log("첫번째 머리카락 파티클 속도 vx : " + scene.getVelocity(0)[0] + " vy : " + scene.getVelocity(0)[1] + " vz : " + scene.getVelocity(0)[2]);
-
     }
 }

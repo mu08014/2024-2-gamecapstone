@@ -77,7 +77,7 @@ public class StrandCompliantManager : SceneStepper
         m_max_num_iters = max_iters;
         m_criterion = criterion;
         m_scene = scene;
-        m_compute_interhair = compute_interhair;
+        m_compute_interhair = true;//compute_interhair;
 
         int numhairs = scene.getNumFlows();
 

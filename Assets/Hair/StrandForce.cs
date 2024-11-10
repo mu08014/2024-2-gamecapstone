@@ -25,10 +25,10 @@ public struct StrandState
     public Kappas m_kappas;
     public GradKappas m_gradKappas;
     public GradTwists m_gradTwists;
-    //GradTwistsSquared m_gradTwistsSquared;
+    public GradTwistsSquared m_gradTwistsSquared;
     public HessKappas m_hessKappas;
     public HessTwists m_hessTwists;
-    //BendingProducts m_bendingProducts;
+    public BendingProducts m_bendingProducts;
 
     public StrandState(in VectorXs initDoFs,
         ref BendingMatrixBase bendingMatrixBase)
@@ -49,10 +49,11 @@ public struct StrandState
         m_gradKappas = new GradKappas(ref m_lengths, ref m_tangents, ref m_curvatureBinormals,
                    ref m_materialFrames1, ref m_materialFrames2, ref m_kappas);
         m_gradTwists = new GradTwists(ref m_lengths, ref m_curvatureBinormals);
+        m_gradTwistsSquared = new GradTwistsSquared(ref m_gradTwists);
         m_hessKappas = new HessKappas(ref m_lengths, ref m_tangents, ref m_curvatureBinormals,
                    ref m_materialFrames1, ref m_materialFrames2, ref m_kappas);
         m_hessTwists = new HessTwists(ref m_tangents, ref m_lengths, ref m_curvatureBinormals);
-
+        m_bendingProducts = new BendingProducts(ref bendingMatrixBase, ref m_gradKappas);
     }
 }
 
@@ -151,8 +152,7 @@ public class StrandForce : Force
             new StrandState(initDoFs, ref bendingMatirxBase);
         m_startState = new StartState(initDoFs);
         resizeInternals();
-        //freezeRestShape(
-        //    0, getNumEdges());
+        freezeRestShape(0, getNumEdges(), 0);
 
         m_lambda = new VectorXs(numConstraintNonViscous());
         m_lambda_v = new VectorXs(numConstraintViscous());
@@ -270,6 +270,23 @@ public class StrandForce : Force
     public override void preCompute(in VectorXs x, in VectorXs v, in VectorXs m, in double dt)
     {
         base.preCompute(x, v, m, dt);
+    }
+
+    public void freezeRestShape(int begin, int end, double damping)
+    {  // Take the current configuration as rest shape
+
+        for (int vtx = begin; vtx < end; ++vtx)
+        {  // Fix rest lengths
+            m_restLengths[vtx] = (1 - damping) * m_strandState.m_lengths[vtx] +
+                                 damping * m_restLengths[vtx];
+        }
+        updateEverythingThatDependsOnRestLengths();
+
+        for (int vtx = begin; vtx < end; ++vtx)
+        {
+            m_restKappas[vtx] = (1 - damping) * m_strandState.m_kappas[vtx].ToVectors() + damping * m_restKappas[vtx];
+            m_restTwists[vtx] = (1 - damping) * m_strandState.m_twists[vtx] + damping * m_restTwists[vtx];
+        }
     }
 
     public override void computeIntegrationVars(in VectorXs x, in VectorXs v, in VectorXs m, ref VectorXs lambda, ref VectorXs lambda_v, ref TripletXs J, ref TripletXs Jv, ref TripletXs Jxv, ref TripletXs tildeK, ref TripletXs stiffness, ref TripletXs damping, ref VectorXs Phi, ref VectorXs Phiv, in double dt)

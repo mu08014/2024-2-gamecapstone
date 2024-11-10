@@ -76,6 +76,19 @@ public class CMath
         return result;
     }
 
+    public static MatrixXs matProduct(Vectors a, Vectors b)
+    {
+        MatrixXs result = new MatrixXs(a.DIM, b.DIM);
+        for (int i = 0; i < a.DIM; i++)
+        {
+            for (int j = 0; j < b.DIM; j++)
+            {
+                result[i, j] = a[i] * b[j];
+            }
+        }
+        return result;
+    }
+
     public static MatrixXs identity(int size)
     {
         MatrixXs result = new MatrixXs(size, size);
@@ -114,6 +127,11 @@ public class CMath
         return result;
     }
 
+    public static bool isSmall(double x)
+    {
+        return x < 1e-12;
+    }
+
     public static Vectors orthonormalParallelTransport(in Vectors u, in Vectors t0,
                                   in Vectors t1)
     {
@@ -121,6 +139,7 @@ public class CMath
 
         Vectors b = t0.cross(t1);
         double bNorm = b.norm();
+        if (isSmall(bNorm)) return u;
         b /= bNorm;
 
         Vectors n0 = t0.cross(b);
@@ -196,6 +215,23 @@ public class CMath
             result[maxCoordinate] = -v[otherCoordinate];
         }
         return result.normalized();
+    }
+
+    public static double innerBProduct(in MatrixXs B, in Vectors u, in  Vectors v)
+    {
+        return B[0, 0] * u[0] * v[0] + B[0, 1] * (u[0] * v[1] + u[1] * v[0]) +
+            B[1, 1] * u[1] * v[1];
+    }
+
+    public static void symBProduct(int n, MatrixXs result, in MatrixXs B,
+                        in MatrixXs Q)
+    {
+        for (int i = 0; i < n; ++i) {
+            Vectors Qrow_i = Q.row(i);
+            result[i, i] = innerBProduct(B, Qrow_i, Qrow_i);
+            for (int j = 0; j < i; ++j)
+                result[i, j] = result[j, i] = innerBProduct(B, Qrow_i, Q.row(j));
+        }
     }
 
     public static void compute_cwiseProduct(ref VectorXs b, in VectorXs x, in VectorXs y)
@@ -327,6 +363,19 @@ public class VectorXs
         return result;
     }
 
+    public static VectorXs operator *(VectorXs a, VectorXs b)
+    {
+        if (a.Size != 4 || b.Size != 4)
+            throw new System.Exception("쿼터니언 곱을 할 수 없습니다.");
+        VectorXs result = new VectorXs(a.Size);
+        result[0] = a[0] * b[0] - a[1] * b[1] - a[2] * b[2] - a[3] * b[3];
+        result[1] = a[0] * b[1] + a[1] * b[0] + a[2] * b[3] - a[3] * b[2];
+        result[2] = a[0] * b[2] - a[1] * b[3] + a[2] * b[0] + a[3] * b[1];
+        result[3] = a[0] * b[3] + a[1] * b[2] - a[2] * b[1] + a[3] * b[0];
+
+        return result;
+    }
+
     public static VectorXs operator /(VectorXs a, double b)
     {
         VectorXs result = new VectorXs(a.Size);
@@ -371,6 +420,34 @@ public class VectorXs
             result += elements[i] * elements[i];
         }
         result = Math.Sqrt(result);
+        return result;
+    }
+
+    public VectorXs qinverse()
+    {
+        if (Size != 4)
+            throw new System.Exception("쿼터니언이 아닙니다.");
+
+        VectorXs result = new VectorXs(4);
+
+        double qsquare = norm() * norm();
+
+        if (qsquare != 0)
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                if (elements[i] != 0)
+                {
+                    result[i] = elements[0] / qsquare;
+                }
+
+                if (i != 0)
+                {
+                    result[i] *= -1;
+                }
+            }   
+        }
+
         return result;
     }
 
@@ -613,7 +690,7 @@ public class VectorXi
         {
             if (i >= elements.Count)
             {
-                elements.Add(elements[i]);
+                elements.Add(v[i - start]);
             }
             else
             {
@@ -987,6 +1064,16 @@ public class MatrixXs
         data = new double[rows, cols];
     }
 
+    public MatrixXs(MatrixXs other)
+    {
+        rows = other.rows;
+        cols = other.cols;
+        data = new double[rows, cols];
+        for (int i = 0; i < rows; i++)
+            for (int j = 0; j < cols; j++)
+                data[i, j] = other.data[i, j];
+    }
+
     public static MatrixXs operator *(double b, MatrixXs a)
     {
         MatrixXs result = new MatrixXs(a.rows, a.cols);
@@ -1077,12 +1164,14 @@ public class MatrixXs
 
     public void Setblock(int row_size, int col_size, int start_row, int start_col, Vectors v)
     {
-        for (int i = start_row; i < start_row + row_size; i++)
+        if (col_size != 1)
         {
-            for (int j = start_col; j < start_col + col_size; j++)
-            {
-                data[i, j] = v[i];
-            }
+            Debug.LogError("열 크기가 1이 아니면, 벡터로 값 설정할 수 없습니다.");
+        }
+
+        for (int i = 0; i < row_size; i++)
+        {
+            data[i + start_row, start_col] = v[i];
         }
     }
 
@@ -1097,16 +1186,6 @@ public class MatrixXs
             }
         }
         return result;
-    }
-
-    public MatrixXs(MatrixXs other)
-    {
-        rows = other.rows;
-        cols = other.cols;
-        data = new double[rows, cols];
-        for (int i = 0;i < rows;i++)
-            for (int j = 0;j < cols;j++)
-                data[i, j] = other.data[i, j];
     }
 
     public MatrixXs Clone()
