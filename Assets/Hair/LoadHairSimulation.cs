@@ -104,16 +104,16 @@ public class LoadHairSimulation
                 particle_eta.Add(eta);
                 bool isSource = false;
                 particle_state.Add(isSource);
-                pos[0] = hairparticle.GetComponent<HairParticle>().Position.x;
-                pos[1] = hairparticle.GetComponent<HairParticle>().Position.y;
-                pos[2] = hairparticle.GetComponent<HairParticle>().Position.z;
+                pos[0] = hairparticle.GetComponent<HairParticle>().position.x;
+                pos[1] = hairparticle.GetComponent<HairParticle>().position.y;
+                pos[2] = hairparticle.GetComponent<HairParticle>().position.z;
 
                 scene.setPosition(vtx, pos.ToVectors());
                 particle_pos.Add(pos);
 
-                vel[0] = hairparticle.GetComponent<HairParticle>().Velocity.x;
-                vel[1] = hairparticle.GetComponent<HairParticle>().Velocity.y;
-                vel[2] = hairparticle.GetComponent<HairParticle>().Velocity.z;
+                vel[0] = hairparticle.GetComponent<HairParticle>().velocity.x;
+                vel[1] = hairparticle.GetComponent<HairParticle>().velocity.y;
+                vel[2] = hairparticle.GetComponent<HairParticle>().velocity.z;
                 scene.setVelocity(vtx, vel.ToVectors());
 
                 bool fixe = false;

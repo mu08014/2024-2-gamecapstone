@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Assertions;
@@ -17,6 +19,11 @@ public class FurMesh : MonoBehaviour
             return _meshFilter;
         }
     }
+
+    private AddFur parent;
+
+    public AddFur Parent { get { return parent; } set { parent = value; } }
+
 
     /// <summary>
     /// Represetaion of one hair.
@@ -39,6 +46,8 @@ public class FurMesh : MonoBehaviour
 
     private List<Hair> _hairs = new();
 
+    
+
     public void AddHair(Hair hair)
     {
         _hairs.Add(hair);
@@ -52,6 +61,7 @@ public class FurMesh : MonoBehaviour
     public void UpdateMesh()
     {
         Mesh mesh = new();
+        GetComponent<MeshFilter>().sharedMesh = mesh;
         List<Vector3> tangets = new();
         List<Vector2> uvs = new();
         List<Vector3> normals = new();
@@ -82,6 +92,26 @@ public class FurMesh : MonoBehaviour
             }
         }
 
+        List<HairParticle> particles = new List<HairParticle>();
+        foreach (var hair in _hairs.Select((value, index) => (value, index)))
+        {
+            foreach (var dot in hair.value._positions.Select((value2, index2) => (value2,index2)))
+            {
+                HairParticle particle = new HairParticle(dot.value2, hair.index);
+                particles.Add(particle);
+                if (dot.index2 == 0)
+                {
+                    particle.IsFixed = true;
+                    //Debug.Log(particles.Count +"th particle is Fixed");
+                }
+            }
+            //Debug.Log("Number of particles in " + hair.index + "th hair is " + particles.Count / (hair.index + 1));
+        }
+        //Debug.Log("Number of Hairs is " + _hairs.Count);
+
+
+
+
         mesh.SetVertices(positions.ToArray());
         mesh.SetUVs(3, uvs.ToArray());
         mesh.SetUVs(1, tangets.ToArray());
@@ -89,5 +119,8 @@ public class FurMesh : MonoBehaviour
         mesh.SetIndices(indices.ToArray(), MeshTopology.Lines, 0);
         mesh.RecalculateBounds();
         meshFilter.mesh = mesh;
+
+        GetComponentInParent<HairComponent>().SetHairInfo(this.parent, particles);
+
     }
 }

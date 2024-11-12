@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Assertions;
+using UnityEngine.UI;
 using UnityEngine.UIElements;
 
 public class AddFur : MonoBehaviour
@@ -13,16 +15,22 @@ public class AddFur : MonoBehaviour
     [Tooltip("Length of generated hairs")]
     public float Length = 1.0f;
 
-    [SerializeField] GameObject _furmeshprefab;
     private FurMesh _furmesh;
-    private MeshFilter _mesh;
-
-    void Start()
+    public FurMesh furmesh
     {
-        _mesh = GetComponent<MeshFilter>();
-        _furmesh = Instantiate(_furmeshprefab, transform).GetComponent<FurMesh>();
-        initMesh();
+        get
+        {
+            if (_furmesh == null)
+                _furmesh = GetComponent<FurMesh>();
+            return _furmesh;
+        }
+        set
+        {
+            _furmesh = value;
+        }
     }
+    private Mesh _mesh;
+    private MeshFilter _meshFilter;
 
     private class Vertex {
         public Vector3 position;
@@ -59,14 +67,34 @@ public class AddFur : MonoBehaviour
         }
     }
 
-    void initMesh()
+    public void initMesh(GameObject _furmeshPrefab)
     {
-        _furmesh.Clear();
 
-        var vertices = _mesh.mesh.vertices;
-        var normals = _mesh.mesh.normals;
-        var uvs = _mesh.mesh.uv;
-        var tris = _mesh.mesh.GetTriangles(0);
+        _meshFilter = GetComponent<MeshFilter>();
+        if (_meshFilter == null)
+        {
+            _mesh = GetComponent<SkinnedMeshRenderer>().sharedMesh;
+        }
+        else
+        {
+            _mesh = _meshFilter.sharedMesh;
+        }
+
+        Debug.Assert( _mesh != null );
+        Mesh baseMesh = _mesh;//컴포넌트  존재여부 확인 필요
+        _furmesh = gameObject.GetComponentInChildren<FurMesh>();
+        if (_furmesh == null)
+        {
+            _furmesh = Instantiate(_furmeshPrefab, transform).GetComponent<FurMesh>();
+            Debug.Log("A new furmesh object created!");
+        }
+        _furmesh.Clear();
+        _furmesh.Parent = this;
+
+        var vertices = baseMesh.vertices;
+        var normals = baseMesh.normals;
+        var uvs = baseMesh.uv;
+        var tris = baseMesh.GetTriangles(0);
 
         for (int i = 0; i < tris.Length; i += 3)
         {
@@ -79,8 +107,4 @@ public class AddFur : MonoBehaviour
         _furmesh.UpdateMesh();
     }
 
-    void Update()
-    {
-        initMesh();
-    }
 }
