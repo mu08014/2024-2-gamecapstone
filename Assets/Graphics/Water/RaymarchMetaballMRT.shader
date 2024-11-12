@@ -1,4 +1,4 @@
-Shader "Custom/RaymarchMetaball"
+Shader "Custom/RaymarchMetaballMRT"
 {
     Properties
     {
@@ -21,6 +21,7 @@ Shader "Custom/RaymarchMetaball"
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+            #pragma target 3.0
 
             #include "UnityCG.cginc"
 
@@ -41,6 +42,8 @@ Shader "Custom/RaymarchMetaball"
                 float3 ro : TEXCOORD1;
                 float3 hitPos : TEXCOORD2;
                 float3 light : TEXCOORD3;
+
+                float3x3 viewMatrixIT : TEXCOORD4;
             };
 
             sampler2D _MainTex;
@@ -55,6 +58,36 @@ Shader "Custom/RaymarchMetaball"
 
             float4 _Color;
 
+            float3x3 Inverse3x3(float3x3 m) {
+                // 행렬식 계산
+                float det = m[0][0] * (m[1][1] * m[2][2] - m[2][1] * m[1][2]) -
+                            m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) +
+                            m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
+
+                // 역행렬이 존재하는지 확인
+                if (abs(det) < 1e-6) {
+                    return float3x3(1, 0, 0, 0, 1, 0, 0, 0, 1); // 단위 행렬 반환 (역행렬이 없을 때)
+                }
+
+                // 여인수 전치 행렬 계산
+                float3x3 adj;
+                adj[0][0] =  (m[1][1] * m[2][2] - m[2][1] * m[1][2]);
+                adj[0][1] = -(m[0][1] * m[2][2] - m[0][2] * m[2][1]);
+                adj[0][2] =  (m[0][1] * m[1][2] - m[0][2] * m[1][1]);
+
+                adj[1][0] = -(m[1][0] * m[2][2] - m[1][2] * m[2][0]);
+                adj[1][1] =  (m[0][0] * m[2][2] - m[0][2] * m[2][0]);
+                adj[1][2] = -(m[0][0] * m[1][2] - m[1][0] * m[0][2]);
+
+                adj[2][0] =  (m[1][0] * m[2][1] - m[2][0] * m[1][1]);
+                adj[2][1] = -(m[0][0] * m[2][1] - m[2][0] * m[0][1]);
+                adj[2][2] =  (m[0][0] * m[1][1] - m[1][0] * m[0][1]);
+
+                // 역행렬 계산: (1 / det) * adj
+                return (1.0 / det) * adj;
+            }
+
+
             v2f vert (appdata v)
             {
                 v2f o;
@@ -65,6 +98,10 @@ Shader "Custom/RaymarchMetaball"
                 o.ro = float4(_WorldSpaceCameraPos, 1);
                 o.hitPos = mul(unity_ObjectToWorld, v.vertex);
                 o.light = _WorldSpaceLightPos0;
+
+                // calculate view matrix's inverse transpos
+                float3x3 viewMatrix = (float3x3) UNITY_MATRIX_V;
+                o.viewMatrixIT = transpose(Inverse3x3(viewMatrix));
                 return o;
             }
 
@@ -117,21 +154,21 @@ Shader "Custom/RaymarchMetaball"
                 return normalize(n);
             }
 
-            fixed4 frag (v2f i) : SV_Target
+            void frag (v2f i, out float4 color : SV_Target0, out float4 normal : SV_Target1)
             {
                 float2 uv = i.uv - 0.5;
                 float3 ro = i.ro;
                 float3 rd = normalize(i.hitPos - ro);
 
-                float d = Raymarch(ro, rd);
+                half d = Raymarch(ro, rd);
                 fixed4 tex = tex2D(_MainTex, i.uv);
                 fixed4 col = 0;
-                float m = dot(uv, uv);
+                half m = dot(uv, uv);
 
                 if (d >= MAX_DIST) {
                     discard;
                 } else {
-                    float3 p = ro + rd * d;
+                    half3 p = ro + rd * d;
                     float3 n = GetNormal(p);
 
                     // depth test
@@ -139,7 +176,7 @@ Shader "Custom/RaymarchMetaball"
                     float4 proj = mul(UNITY_MATRIX_P, view);
                     proj /= proj.w;
 
-                    float sceneDepth = tex2D(_CameraDepthTexture, float2(0.5 + proj.x / 2, 0.5 - proj.y / 2));
+                    half sceneDepth = tex2D(_CameraDepthTexture, float2(0.5 + proj.x / 2, 0.5 - proj.y / 2));
                     if (proj.z < sceneDepth)
                         discard;
 
@@ -148,9 +185,9 @@ Shader "Custom/RaymarchMetaball"
                     col.a = 0.1;
                     
                     // fresnel
-                    float cosNR = saturate(dot(n, normalize(-rd)));
-                    float r0 = pow((1.0003 - 1.33) / (1.0003 + 1.33), 2);
-                    float r = r0 + (1 - r0) * pow(1 - cosNR, 2);
+                    half cosNR = saturate(dot(n, normalize(-rd)));
+                    half r0 = pow((1.0003 - 1.33) / (1.0003 + 1.33), 2);
+                    half r = r0 + (1 - r0) * pow(1 - cosNR, 2);
                     
                     // environment
                     float3 refl = reflect(rd, n);
@@ -162,11 +199,19 @@ Shader "Custom/RaymarchMetaball"
                     col.rgb = finalEColor * r;
 
                     // specular
-                    float3 h = -normalize(rd - i.light);
-                    float sp = pow(saturate(dot(h, n)), 1000);
+                    half3 h = -normalize(rd - i.light);
+                    half sp = pow(saturate(dot(h, n)), 1000);
                     col += sp;
+                    
+                    color = col;
+                    half3 n_cam = mul(i.viewMatrixIT, n);
+                    n_cam.xyz = normalize(n_cam.xyz);
+                    n_cam.xyz += 1.0f;
+                    n_cam.xyz /= 2.0f;
+                    
+                    normal = float4(n_cam, 1);
+                    //color = half4(n_cam.xyz, 1);
                 } 
-                return col;
             }
 
             
