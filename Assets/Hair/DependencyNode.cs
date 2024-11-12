@@ -68,6 +68,13 @@ public abstract class DependencyNode<ValueT> : DependencyBase
         m_value = value;
     }
 
+    public DependencyNode(ValueT value, ushort firstValidIndex, ushort size)
+    {
+        m_value = value;
+        m_firstValidIndex = firstValidIndex;
+        m_size = size;
+    }
+
     public DependencyNode(ushort firstValidIndex, ushort size)
     {
         m_firstValidIndex = firstValidIndex;

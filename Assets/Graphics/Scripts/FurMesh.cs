@@ -1,6 +1,8 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using Unity.Collections;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Assertions;
@@ -24,6 +26,16 @@ public class FurMesh : MonoBehaviour
 
     public AddFur Parent { get { return parent; } set { parent = value; } }
 
+    private MeshRenderer _meshRenderer;
+    public MeshRenderer meshRenderer
+    {
+        get
+        {
+            if (_meshRenderer == null)
+                _meshRenderer = GetComponent<MeshRenderer>();
+            return _meshRenderer;
+        }
+    }
 
     /// <summary>
     /// Represetaion of one hair.
@@ -57,24 +69,72 @@ public class FurMesh : MonoBehaviour
     {
         _hairs.Clear();
     }
-
+    
+    private List<Vector3> tangents = new();
+    private List<Vector2> uvs = new();
+    private List<Vector3> normals = new();
+    private List<Vector3> positions = new();
+    private List<int> indices = new();
+    
     public void UpdateMesh()
     {
-        Mesh mesh = new();
-        GetComponent<MeshFilter>().sharedMesh = mesh;
-        List<Vector3> tangets = new();
-        List<Vector2> uvs = new();
-        List<Vector3> normals = new();
-        List<Vector3> positions = new();
-        List<int> indices = new();
 
+        Mesh mesh = meshFilter.mesh;
+        
+        tangents.Clear();
+        uvs.Clear();
+        normals.Clear();
+        positions.Clear();
+        indices.Clear();
+        
+        /*
+        // native array version
+        int vertex_len = _hairs.Count * _hairs[0]._positions.Length;
+        NativeArray<Vector3> tangents = new(vertex_len, Allocator.Temp);
+        NativeArray<Vector3> uvs = new(vertex_len, Allocator.Temp);
+        NativeArray<Vector3> normals = new(vertex_len, Allocator.Temp);
+        NativeArray<Vector3> positions = new(vertex_len, Allocator.Temp);
+        int indices_len = _hairs.Count * (_hairs[0]._positions.Length - 1) * 2;
+        NativeArray<int> indices = new(indices_len, Allocator.Temp);
+
+
+        int head = 0;
+        int indices_count = 0;
         foreach (Hair hair in _hairs)
         {
+            tangents[head] = (hair._positions[0] - hair._positions[1]);
+            for (int i = 1; i < hair._positions.Length; i++)
+                tangents[head + i] = (hair._positions[i - 1] - hair._positions[i]);
+
+            for (int i = 0; i < hair._positions.Length; i++)
+            {
+                positions[head + i] = hair._positions[i];
+                normals[head + i] = hair._normal;
+                uvs[head + i] = hair._uv;
+            }
+
+            for (int i = 0; i < hair._positions.Length - 1; i++)
+            {
+                indices[indices_count++] = head + i;
+                indices[indices_count++] = head + i + 1;
+            }
+
+            head += hair._positions.Length;
+        }
+        */
+        
+        for (int k = 0; k < _hairs.Count; k++)
+        {
+            if (k % 10000 == 0) ;
+                //yield return null;
+
+            Hair hair = _hairs[k];
+
             int head = positions.Count;
 
-            tangets.Add(hair._positions[0] - hair._positions[1]);
+            tangents.Add(hair._positions[0] - hair._positions[1]);
             for (int i = 1; i < hair._positions.Length; i++)
-                tangets.Add(hair._positions[i - 1] - hair._positions[i]);
+                tangents.Add(hair._positions[i - 1] - hair._positions[i]);
 
             for (int i = 0; i < hair._positions.Length; i++)
                 positions.Add(hair._positions[i]);
@@ -110,17 +170,30 @@ public class FurMesh : MonoBehaviour
         //Debug.Log("Number of Hairs is " + _hairs.Count);
 
 
-
+        mesh.Clear();
 
         mesh.SetVertices(positions.ToArray());
         mesh.SetUVs(3, uvs.ToArray());
-        mesh.SetUVs(1, tangets.ToArray());
+        mesh.SetUVs(1, tangents.ToArray());
         mesh.SetUVs(2, normals.ToArray());
         mesh.SetIndices(indices.ToArray(), MeshTopology.Lines, 0);
         mesh.RecalculateBounds();
-        meshFilter.mesh = mesh;
+
 
         GetComponentInParent<HairComponent>().SetHairInfo(this.parent, particles);
+
+
+        
+        float ratio = (float)Screen.width / Screen.height;
+        //meshRenderer.material.SetFloat("_AspectRatio", ratio);
+
+        /*
+        tangents.Dispose();
+        uvs.Dispose();
+        normals.Dispose();
+        positions.Dispose();
+        indices.Dispose();
+        */
 
     }
 }

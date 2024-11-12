@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Assertions;
@@ -14,20 +15,26 @@ public class AddFur : MonoBehaviour
 
     [Tooltip("Length of generated hairs")]
     public float Length = 1.0f;
+    public float NoisePower = 0.1f;
+
+    [Range(1, 3)]
+    public int Rod = 1;
+
+    [SerializeField] GameObject _furmeshprefab;
+    [SerializeField] Material _furmaterial = null;
+    [SerializeField] Texture2D _lengthTexture;
 
     private FurMesh _furmesh;
     public FurMesh furmesh
     {
-        get
-        {
-            if (_furmesh == null)
-                _furmesh = GetComponent<FurMesh>();
-            return _furmesh;
-        }
-        set
-        {
-            _furmesh = value;
-        }
+
+        _mesh = GetComponent<MeshFilter>();
+        _furmesh = Instantiate(_furmeshprefab, transform).GetComponent<FurMesh>();
+        //if (_furmesh != null)
+        //    _furmesh.GetComponent<MeshRenderer>().material = _furmaterial;
+        initMesh();
+
+        //StartCoroutine(HairUpdateCo());
     }
     private Mesh _mesh;
     private MeshFilter _meshFilter;
@@ -49,15 +56,24 @@ public class AddFur : MonoBehaviour
 
         static public Vertex operator/(Vertex a, float b)
         {
-            return new Vertex(a.position / b, a.normal / b, a.uv / b);
+            return new Vertex(a.position / b, a.normal, a.uv / b);
         }
     }
 
     void MakeFur(int level, Vertex v1, Vertex v2, Vertex v3)
     {
         var av = (v1 + v2 + v3) / 3;
+
+        var noiseLength = 0.0f;
+        if (_lengthTexture != null)
+            noiseLength = (_lengthTexture.GetPixelBilinear(av.uv.x, av.uv.y).r - 0.5f) * NoisePower;
+
+        List<Vector3> poses = new();
+        for (int i = 0; i <= Rod; i++)
+            poses.Add(av.position + (Length + noiseLength) * i / Rod * av.normal);
+
         _furmesh.AddHair(new FurMesh.Hair(
-            new List<Vector3> { av.position, av.position + av.normal * Length }, av.normal, av.uv));
+                poses, av.normal, av.uv));
 
         if (level < Iter)
         {
@@ -67,7 +83,9 @@ public class AddFur : MonoBehaviour
         }
     }
 
+
     public void initMesh(GameObject _furmeshPrefab)
+
     {
 
         _meshFilter = GetComponent<MeshFilter>();
@@ -105,6 +123,21 @@ public class AddFur : MonoBehaviour
         }
 
         _furmesh.UpdateMesh();
+    }
+
+    void Update()
+    {
+        //initMesh();
+    }
+
+    IEnumerator HairUpdateCo()
+    {
+        var wait = new WaitForSeconds(1.0f);
+        while (true)
+        {
+            initMesh();
+            yield return wait;
+        }
     }
 
 }

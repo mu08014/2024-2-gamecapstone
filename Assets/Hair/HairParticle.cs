@@ -6,11 +6,13 @@ using UnityEngine;
 [Serializable]
 public class HairParticle
 {
+
     public Vector3 position;
     public Vector3 velocity;
     public Vector3 buf0;
     public MatrixXs c;
     List<int> bridges;
+
 
     double radii;
     double fresh;
@@ -46,13 +48,13 @@ public class HairParticle
         this.strandID = strandID;
     }
 
-    
 
 }
 //public class HairParticle : MonoBehaviour
 //{
 //    private Vector3 m_Position;
 //    private Vector3 m_Velocity;
+//    private bool m_Fix;
 
 //    public Vector3 Position
 //    {
@@ -78,11 +80,24 @@ public class HairParticle
 //        }
 //    }
 
-//    public HairParticle(double x, double y, double z, double vx, double vy, double vz)
+//public bool Fix
+//{
+//    get
 //    {
-//        m_Position = new Vector3((float)x, (float)y, (float)z);
-//        m_Velocity = new Vector3((float)x, (float)y, (float)z);
+//        return m_Fix;
 //    }
+//    set
+//    {
+//        m_Fix = value;
+//    }
+//}
+
+//public HairParticle(double x, double y, double z, double vx, double vy, double vz)
+//{
+//    m_Position = new Vector3((float)x, (float)y, (float)z);
+//    m_Velocity = new Vector3((float)x, (float)y, (float)z);
+//    m_Fix = false;
+//}
 
 //    void Awake()
 //    {

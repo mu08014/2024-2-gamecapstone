@@ -42,19 +42,19 @@ public abstract class HairFlow
 
     protected TwoDScene m_parent;
 
-    protected List<int> m_particle_indices;
-    protected List<byte> m_particle_state;
-    protected List<int> m_edge_indices;
-    protected List<Tuple<int, int>> m_internal_edges;
-    protected List<Tuple<int, int>> m_global_edges;
-    protected List<List<int>> m_particle_to_edges;
-    protected Dictionary<int, int> m_global_to_local;
+    protected List<int> m_particle_indices = new List<int>();
+    protected List<bool> m_particle_state = new List<bool>();
+    protected List<int> m_edge_indices = new List<int>();
+    protected List<Tuple<int, int>> m_internal_edges = new List<Tuple<int, int>>();
+    protected List<Tuple<int, int>> m_global_edges = new List<Tuple<int, int>>();
+    protected List<List<int>> m_particle_to_edges = new List<List<int>>();
+    protected Dictionary<int, int> m_global_to_local = new Dictionary<int, int>();
 
     protected VectorXs m_liquid_phi;
     protected VectorXs m_porosity;
     protected VectorXs m_eta;
     protected VectorXs m_avg_eta;
-    protected VectorXs m_edge_avg_;
+    protected VectorXs m_edge_eta;
     protected VectorXs m_u;
     protected VectorXs m_stored_friction_coeff;
 
@@ -87,7 +87,7 @@ public abstract class HairFlow
     protected VectorXi m_constraint_starts;
     protected VectorXi m_constraint_length;
 
-    protected List<List<int>> m_edge_bridges;
+    protected List<List<int>> m_edge_bridges = new List<List<int>>();
 
     protected int m_flow_index;
 
@@ -100,15 +100,15 @@ public abstract class HairFlow
         STAR
     }
 
-    public HairFlow(ref TwoDScene parent, in List<int> involved_particles, in VectorXs eta, in List<byte> particle_state, int dim)
+    public HairFlow(ref TwoDScene parent, in List<int> involved_particles, in VectorXs eta, in List<bool> particle_state, int dim)
     {
         m_parent = parent;
         m_particle_indices = involved_particles;
         m_eta = eta;
         m_particle_state = particle_state;
         m_flow_index = m_flow_index + 1;
-        m_porosity.resize(m_eta.size());
-        m_liquid_phi.resize(m_eta.size());
+        m_porosity = new VectorXs(m_eta.size());
+        m_liquid_phi = new VectorXs(m_eta.size());
 
         VectorXs radii = m_parent.getRadii();
 
@@ -301,7 +301,7 @@ public abstract class HairFlow
     public abstract void updateReservoir(ref FluidSim fluidsim, in VectorXs x,
                                in VectorXs v, in double dt);
 
-    public virtual List<byte> getState()
+    public virtual List<bool> getState()
     {
         return m_particle_state;
     }
@@ -511,6 +511,7 @@ public abstract class HairFlow
     {
         m_constraint_starts = start;
         m_constraint_length = num;
+
     }
 
     public virtual VectorXi getConstraintIdx()
