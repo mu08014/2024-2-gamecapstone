@@ -13,7 +13,7 @@ public class AddFurButton : Editor
         AddFur addFur = (AddFur)target;
         if (GUILayout.Button("Update Fur"))
         {
-            addFur.initMesh();
+            //addFur.initMesh();
         }
     }
 }

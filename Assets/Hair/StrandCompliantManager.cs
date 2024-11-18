@@ -220,12 +220,11 @@ public class StrandCompliantManager : SceneStepper
             m_scene.storeLambda(m_lambda, m_lambda_v);
 
             updateNextV(ref scene, m_vplus);
-
             m_next_x = x + dt * v;
 
             return true;
         }
-
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // q = Ap
         computeAp(scene, m_p, m_q, dt);
 

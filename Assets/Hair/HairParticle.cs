@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 [Serializable]
-public class HairParticle
+public class HairParticle 
 {
 
     public Vector3 position;
@@ -47,9 +47,15 @@ public class HairParticle
         this.IsFixed = false;
         this.strandID = strandID;
     }
-
+    public HairParticle(double x, double y, double z, double vx, double vy, double vz)
+    {
+        position = new Vector3((float)x, (float)y, (float)z);
+        velocity = new Vector3((float)x, (float)y, (float)z);
+        IsFixed= false;
+    }
 
 }
+
 //public class HairParticle : MonoBehaviour
 //{
 //    private Vector3 m_Position;

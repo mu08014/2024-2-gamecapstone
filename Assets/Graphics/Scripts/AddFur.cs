@@ -14,25 +14,37 @@ public class AddFur : MonoBehaviour
     public int Iter = 1;
 
     [Tooltip("Length of generated hairs")]
-    public float Length = 1.0f;
+    public float Length = 0.001f;
     public float NoisePower = 0.1f;
 
-    [Range(1, 3)]
+    [Range(1, 6)]
     public int Rod = 1;
 
     [SerializeField] GameObject _furmeshprefab;
     [SerializeField] Material _furmaterial = null;
     [SerializeField] Texture2D _lengthTexture;
-
+    [SerializeField]
     private FurMesh _furmesh;
-    public FurMesh furmesh
+    public FurMesh furmesh {
+        get
+        {
+            if (_furmesh == null)
+                _furmesh = GetComponent<FurMesh>();
+            return _furmesh;
+        }
+        set
+        {
+            _furmesh = value;
+        }
+    }
+    public void Start()
     {
 
-        _mesh = GetComponent<MeshFilter>();
-        _furmesh = Instantiate(_furmeshprefab, transform).GetComponent<FurMesh>();
-        //if (_furmesh != null)
-        //    _furmesh.GetComponent<MeshRenderer>().material = _furmaterial;
-        initMesh();
+        //_mesh = GetComponent<MeshFilter>();
+        //_furmesh = Instantiate(_furmeshprefab, transform).GetComponent<FurMesh>();
+        ////if (_furmesh != null)
+        ////    _furmesh.GetComponent<MeshRenderer>().material = _furmaterial;
+        //initMesh();
 
         //StartCoroutine(HairUpdateCo());
     }
@@ -135,7 +147,7 @@ public class AddFur : MonoBehaviour
         var wait = new WaitForSeconds(1.0f);
         while (true)
         {
-            initMesh();
+            initMesh(_furmeshprefab);
             yield return wait;
         }
     }

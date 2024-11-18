@@ -145,7 +145,7 @@ public class LoadHairSimulation
                 scene.setVelocity(vtx, vel.ToVectors());
 
                 bool fixe = false;
-                fixe = hairparticle.GetComponent<HairParticle>().Fix;
+                fixe = hairparticle.GetComponent<HairParticle>().IsFixed;
                 scene.setFixed(vtx, fixe);
 
                 if (vtx !=  globalvtx)
@@ -222,6 +222,6 @@ public class LoadHairSimulation
             ((StrandCompliantManager)scene_stepper).PostStepScene(ref scene, hairsubstep);
 
         }
-        Debug.Log("첫번째 머리카락 파티클 속도 vx : " + scene.getVelocity(0)[0] + " vy : " + scene.getVelocity(0)[1] + " vz : " + scene.getVelocity(0)[2]);
+        Debug.Log("첫번째 머리카락 파티클 속도 vx : " + scene.getVelocity(3)[0] + " vy : " + scene.getVelocity(3)[1] + " vz : " + scene.getVelocity(3)[2]);
     }
 }
