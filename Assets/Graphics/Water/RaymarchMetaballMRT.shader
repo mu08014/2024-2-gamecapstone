@@ -25,7 +25,7 @@ Shader "Custom/RaymarchMetaballMRT"
 
             #include "UnityCG.cginc"
 
-            #define MAX_STEPS 100
+            #define MAX_STEPS 30
             #define MAX_DIST 50
             #define SURF_DIST 0.001
 
@@ -154,7 +154,47 @@ Shader "Custom/RaymarchMetaballMRT"
                 return normalize(n);
             }
 
-            void frag (v2f i, out float4 color : SV_Target0, out float4 normal : SV_Target1)
+            float4 SSRRaymarch(float3 ro, float3 rd) {
+                float4 o = float4(0, 0, 0, 0);
+                float dO = 0;
+                float stepDist = 5.0f;
+                int dir = 1;
+                for (int i = 0; i < MAX_STEPS; i++) {
+                    dO += stepDist * dir;
+                    float3 p = ro + dO * rd;
+
+                    float4 view = mul(UNITY_MATRIX_V, float4(p, 1));
+                    float4 proj = mul(UNITY_MATRIX_P, view);
+                    proj /= proj.w;
+                    float2 uv = float2(0.5 + proj.x / 2, 0.5 - proj.y / 2);
+                    
+                    // ray is out
+                    if (uv.x < 0 || uv.y < 0 || uv.x > 1 || uv.y > 1 || proj.z > 1)
+                        break;
+                    
+                    float depth = tex2D(_CameraDepthTexture, float2(0.5 + proj.x / 2, 0.5 - proj.y / 2));
+
+                    // hit!
+                    if (dir == 1 && proj.z < depth) {
+                        stepDist /= 2;
+                        dir = -1;
+                    }
+                    else if (dir == -1 && proj.z > depth) {
+                        stepDist /= 2;
+                        dir = 1;
+                    }
+
+                    if (stepDist < 0.1f) {
+                        o = float4(uv, 0, 1);
+                        break;
+                    }
+                }
+                return o;
+            }
+
+            void frag (v2f i, out float4 color : SV_Target0,
+                              out float4 normal : SV_Target1,
+                              out float4 refl : SV_Target2)
             {
                 float2 uv = i.uv - 0.5;
                 float3 ro = i.ro;
@@ -176,14 +216,22 @@ Shader "Custom/RaymarchMetaballMRT"
                     float4 proj = mul(UNITY_MATRIX_P, view);
                     proj /= proj.w;
 
-                    half sceneDepth = tex2D(_CameraDepthTexture, float2(0.5 + proj.x / 2, 0.5 - proj.y / 2));
+                    float sceneDepth = tex2D(_CameraDepthTexture, float2(0.5 + proj.x / 2, 0.5 - proj.y / 2));
                     if (proj.z < sceneDepth)
                         discard;
 
                     // color
                     col.rgb = _Color;
                     col.a = 0.1;
+
+                    col.rgb = tex2D(_CameraDepthTexture, float2(0.5 + proj.x / 2, 0.5 - proj.y / 2));
                     
+                    // SSR
+                    half3 ssr_ro = p; 
+                    half3 ssr_rd = reflect(rd, n);
+                    float4 ssr = SSRRaymarch(ssr_ro, ssr_rd);
+                    refl = ssr;
+
                     // fresnel
                     half cosNR = saturate(dot(n, normalize(-rd)));
                     half r0 = pow((1.0003 - 1.33) / (1.0003 + 1.33), 2);

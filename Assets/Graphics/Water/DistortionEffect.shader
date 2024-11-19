@@ -3,7 +3,9 @@ Shader "Custom/WaterRippleEffect"
     Properties
     {
         _MainTex ("Main Texture", 2D) = "white" {}
+        _ColorTex ("Color Texture", 2D) = "white" {}
         _NoiseTex ("Noise Texture", 2D) = "white" {}
+        _ReflectionTex ("Reflection Texture", 2D) = "white" {}
         _DistortionStrength ("Distortion Strength", Float) = 0.05
         _TimeScale ("Time Scale", Float) = 1.0
     }
@@ -33,7 +35,9 @@ Shader "Custom/WaterRippleEffect"
             };
             
             sampler2D _MainTex;
+            sampler2D _ColorTex;
             sampler2D _NoiseTex;
+            sampler2D _ReflectionTex;
             float _DistortionStrength;
             float _TimeScale;
             
@@ -54,7 +58,18 @@ Shader "Custom/WaterRippleEffect"
                 }
                 float2 distortion = -noise * _DistortionStrength;
                 float2 uv = i.uv + distortion;
-                return tex2D(_MainTex, uv);
+                fixed4 target = tex2D(_MainTex, uv);
+
+                fixed4 color = tex2D(_ColorTex, i.uv);
+
+                // ssr
+                float4 refl = tex2D(_ReflectionTex, i.uv);
+                //float edgeFade = 1.0f - pow(length(refl.xy - 0.5f) * 2.0f, 1.0f);
+                if (refl.w != 0) {
+                    color.rgb = tex2D(_MainTex, refl.xy).rgb;
+                    //color.a = 1;
+                }
+                return target * (1 - color.a) + color * color.a;
             }
             ENDCG
         }
