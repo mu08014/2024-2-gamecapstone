@@ -8,7 +8,7 @@ public class MRTScript : MonoBehaviour
     public RenderTexture normalRenderTexture;  // 노멀 정보 저장용
     public Renderer target;
 
-    private Camera cam;
+    public Camera cam; // 물을 렌더링할 카메라. 메인 카메라면 안 됨
     private Material mrtMaterial;
     private CommandBuffer commandBuffer;
 
@@ -17,7 +17,7 @@ public class MRTScript : MonoBehaviour
         //colorRenderTexture = new(1920, 1080, 1);
         //normalRenderTexture = new(1920, 1080, 1);
 
-        cam = GetComponent<Camera>();
+        //cam = GetComponent<Camera>();
 
         
         // MRT용 Material 설정
