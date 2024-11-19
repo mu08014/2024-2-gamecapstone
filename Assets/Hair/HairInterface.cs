@@ -8,6 +8,11 @@ using UnityEngine;
 public class HairInterface : MonoBehaviour
 {
     private List<List<GameObject>> hairs = new List<List<GameObject>>();
+    private LoadHairSimulation loadHairSimulation = new LoadHairSimulation();
+    private int hairParticleCount;
+
+    public float hairUpdateTime = 0.1f;
+    public float executeSpeed = 1f;
 
     public List<List<GameObject>> Hairs
     {
@@ -19,20 +24,26 @@ public class HairInterface : MonoBehaviour
 
     private void Start()
     {
-        MakeHair();
+        MakeHairByText();
+        hairParticleCount = getHairParticleCount();
 
-        LoadHairSimulation loadHairSimulation = new LoadHairSimulation();
         loadHairSimulation.loadDERSimulation();
-        for (int i = 0; i < hairs.Count * hairs[0].Count; i++)
+        for (int i = 0; i < hairParticleCount; i++)
         {
+            Debug.Log("Particle " + i);
             Vectors v = loadHairSimulation.scene.getPosition(i).Clone();
             Debug.Log("x: " + v[0].ToString() + " y: " + v[1].ToString() + " z: " + v[2].ToString());
+
+            Vectors vel = loadHairSimulation.scene.getVelocity(i);
+            Debug.Log("vx : " + vel[0] + " vy : " + vel[1] + " vz : " + vel[2]);
         }
+
+        StartCoroutine(HairUpdateCoroutine());
     }
 
     private void Update()
     {
-
+        //HairUpdate();
     }
 
     public List<int> getHairsCount()
@@ -45,7 +56,18 @@ public class HairInterface : MonoBehaviour
         return result;
     }
 
-    void MakeHair()
+    public int getHairParticleCount()
+    {
+        int result = 0;
+        foreach (var hair in hairs)
+        {
+            foreach (var particle in hair)
+                result++;
+        }
+        return result;
+    }
+
+    void MakeHairByText()
     {
         var filePath = Path.Combine(Application.dataPath, "Hair/HairData.txt");
         try
@@ -68,6 +90,7 @@ public class HairInterface : MonoBehaviour
                     string[] data = line.Split(' ');
                     float[] pos = new float[3];
                     float[] vel = new float[3];
+                    bool isFix = false;
                     foreach (string value in data)
                     {
                         if (value == "")
@@ -93,19 +116,27 @@ public class HairInterface : MonoBehaviour
                                 vel[i++] = float.Parse(velocity);
                             }
                         }
+                        else if (value[..2].Equals("f="))
+                        {
+                            string fs = value[2..];
+                            if (fs[0] == '1')
+                            {
+                                isFix = true;
+                            }
+                        }
                     }
                     GameObject newHairObject = new GameObject("hairparticle");
-                    newHairObject.AddComponent<HairParticle>();
-                    newHairObject.GetComponent<HairParticle>().Position = new Vector3(pos[0], pos[1], pos[2]);
-                    newHairObject.GetComponent<HairParticle>().Velocity = new Vector3(vel[0], vel[1], vel[2]);
+                    newHairObject.AddComponent<HairParticleTestMode>();
+                    newHairObject.GetComponent<HairParticleTestMode>().Position = new Vector3(pos[0], pos[1], pos[2]);
+                    newHairObject.GetComponent<HairParticleTestMode>().Velocity = new Vector3(vel[0], vel[1], vel[2]);
+                    newHairObject.GetComponent<HairParticleTestMode>().Fix = isFix;
                     newHairObject.AddComponent<MeshFilter>();
                     newHairObject.GetComponent<MeshFilter>().mesh = Resources.GetBuiltinResource<Mesh>("Sphere.fbx");
                     newHairObject.AddComponent<MeshRenderer>();
                     newHairObject.GetComponent<Renderer>().material = new Material(Shader.Find("Standard"));
-                    newHairObject.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
+                    newHairObject.transform.localScale = new Vector3(0.3f, 0.3f, 0.3f);
 
                     list.Add(newHairObject);
-                    Debug.Log("create hair");
                 }
             }
             else
@@ -116,6 +147,50 @@ public class HairInterface : MonoBehaviour
         catch (System.Exception e)
         {
             Debug.Log("파일을 읽는 중 오류 발생: " + e.Message);
+        }
+    }
+
+    public void HairUpdate()
+    {
+        loadHairSimulation.hairUpdate(Time.deltaTime);
+
+        int row = 0;
+        int col = 0;
+        for (int i = 0; i < hairParticleCount; i++)
+        {
+            Vectors x_vec = loadHairSimulation.scene.getPosition(i).Clone();
+            Vectors v_vec = loadHairSimulation.scene.getVelocity(i).Clone();
+            hairs[row][col].GetComponent<HairParticleTestMode>().Position = new Vector3((float)x_vec[0], (float)x_vec[1], (float)x_vec[2]);
+            hairs[row][col++].GetComponent<HairParticleTestMode>().Velocity = new Vector3((float)v_vec[0], (float)v_vec[1], (float)v_vec[2]);
+            if (col >= hairs[row].Count)
+            {
+                row++;
+                col = 0;
+            }
+        }
+    }
+
+    IEnumerator HairUpdateCoroutine()
+    {
+        while (true)
+        {
+            loadHairSimulation.hairUpdate(hairUpdateTime * executeSpeed);
+
+            int row = 0;
+            int col = 0;
+            for (int i = 0; i < hairParticleCount; i++)
+            {
+                Vectors x_vec = loadHairSimulation.scene.getPosition(i).Clone();
+                Vectors v_vec = loadHairSimulation.scene.getVelocity(i).Clone();
+                hairs[row][col].GetComponent<HairParticleTestMode>().Position = new Vector3((float)x_vec[0], (float)x_vec[1], (float)x_vec[2]);
+                hairs[row][col++].GetComponent<HairParticleTestMode>().Velocity = new Vector3((float)v_vec[0], (float)v_vec[1], (float)v_vec[2]);
+                if (col >= hairs[row].Count)
+                {
+                    row++;
+                    col = 0;
+                }
+            }
+            yield return new WaitForSeconds(hairUpdateTime);
         }
     }
 

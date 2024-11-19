@@ -27,6 +27,7 @@ public class StrandEquilibriumParameters
     }
 }
 
+[Serializable]
 public class StrandParameters
 {
     public double m_density;
@@ -73,6 +74,23 @@ public class StrandParameters
         m_accumulateVisCousOnlyForBendingModes = accumViscousBend;
         m_variableRadiusHair = variableRadiusHair;
         m_straightHairs = straightHairs;
+    }
+    public StrandParameters()
+    {
+        m_density = 1.3;
+        m_viscosity = 1e3;
+        m_physicalRadius = new PhysicalRadius(0.0025);
+        m_baseRotation = new BaseRotation(0);
+        m_bendingMatrixBase = new BendingMatrixBase(m_physicalRadius, m_baseRotation);
+        m_youngsModulus = new YoungsModulus(1e10);
+        m_shearModulus = new ShearModulus(3.4e9);
+        m_stretchingMultiplier = 1.0;
+        m_ks = new ElasticKs(m_physicalRadius, m_youngsModulus);
+        m_kt = new ElasticKt(m_physicalRadius, m_shearModulus);
+        m_accumulateWithViscous = true;
+        m_accumulateVisCousOnlyForBendingModes = true;
+        m_variableRadiusHair = false;
+        m_straightHairs = 1;
     }
 
     public double interpolatedRadiusMultiplier(int vtx, int numVertices)
@@ -125,11 +143,9 @@ public class StrandParameters
     public void computeViscousForceCoefficients(double dt)
     {
         double m_radius = m_physicalRadius.get();
-
         m_viscousKs = CMath.M_PI * m_radius * m_radius * 3 * m_viscosity / dt;
         m_viscousKt = CMath.M_PI_4 * m_radius * m_radius *
-            (m_radius * m_radius + m_radius * m_radius) * m_viscosity /
-            dt;
+            (m_radius * m_radius + m_radius * m_radius) * m_viscosity / dt;
         m_viscousBendingCoefficientBase = 3 * m_viscosity / dt;
     }
 

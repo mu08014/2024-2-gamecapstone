@@ -11,11 +11,6 @@ public class PhysicalRadius : DependencyNode<double>
         setClean();
     }
 
-    public PhysicalRadius Clone()
-    {
-        return new PhysicalRadius(this.m_value);
-    }
-
     public virtual string name() { return "PhyscialRadius"; }
 
     protected override void compute() { }
@@ -31,11 +26,6 @@ public class BaseRotation : DependencyNode<double>
     public virtual string name() { return "BaseRotation"; }
 
     protected override void compute() { }
-
-    public BaseRotation Clone()
-    {
-        return new BaseRotation(this.m_value);
-    }
 }
 
 //Unit: cm^4
@@ -46,8 +36,8 @@ public class BendingMatrixBase : DependencyNode<MatrixXs>
 
     public BendingMatrixBase(PhysicalRadius rad, BaseRotation baseRotation) : base(new MatrixXs(2, 2))
     {
-        m_physicalRadius = rad.Clone();
-        m_baseRotation = baseRotation.Clone();
+        m_physicalRadius = rad;
+        m_baseRotation = baseRotation;
         m_value.setZero();
         m_physicalRadius.addDependent(this);
         m_baseRotation.addDependent(this);
@@ -60,21 +50,18 @@ public class BendingMatrixBase : DependencyNode<MatrixXs>
         double radius = m_physicalRadius.get();
         double baseRotation = m_baseRotation.get();
 
-        MatrixXs B = m_value.Clone();
+        MatrixXs B = m_value;
         B[0, 0] = CMath.PI_4 * radius * CMath.cube(radius);
         B[1, 1] = CMath.PI_4 * radius * CMath.cube(radius);
 
         MatrixXs rot = new Rotation2D(baseRotation).toRotationMatrix();
-        B = (rot * B * rot.transpose()).Clone();
+        B = (rot * B * rot.transpose());
         B[0, 1] = B[1, 0] = 
             0.5 * (B[0, 1] + B[1, 0]);
 
-        setDependentsDirty();
-    }
+        m_value = B;
 
-    public BendingMatrixBase Clone()
-    {
-        return new BendingMatrixBase(this.m_physicalRadius, this.m_baseRotation);
+        setDependentsDirty();
     }
 }
 
@@ -89,11 +76,6 @@ public class YoungsModulus : DependencyNode<double>
     public virtual string name() { return "YoungsModulus"; }
 
     protected override void compute() { }
-
-    public YoungsModulus Clone()
-    {
-        return new YoungsModulus(this.m_value);
-    }
 }
 
 // Unit: dPa = g cm^-1 s^-2
@@ -107,11 +89,6 @@ public class ShearModulus : DependencyNode<double>
     public virtual string name() { return "ShearModulus"; }
 
     protected override void compute() { }
-
-    public ShearModulus Clone()
-    {
-        return new ShearModulus(this.m_value);
-    }
 }
 
 // Unit : 10^-5 N = g cm s^-2
@@ -122,8 +99,8 @@ public class ElasticKs : DependencyNode<double>
 
     public ElasticKs(PhysicalRadius rad, YoungsModulus ym) : base(double.NaN)
     {
-        m_physicalRadius = rad.Clone();
-        m_youngsModulus = ym.Clone();
+        m_physicalRadius = rad;
+        m_youngsModulus = ym;
         m_physicalRadius.addDependent(this);
         m_youngsModulus.addDependent(this);
     }
@@ -149,8 +126,8 @@ public class ElasticKt : DependencyNode<double>
 
     public ElasticKt(PhysicalRadius rad, ShearModulus sm) : base(double.NaN)
     {
-        m_physicalRadius = rad.Clone();
-        m_shearModulus = sm.Clone();
+        m_physicalRadius = rad;
+        m_shearModulus = sm;
         m_physicalRadius.addDependent(this);
         m_shearModulus.addDependent(this);
     }
