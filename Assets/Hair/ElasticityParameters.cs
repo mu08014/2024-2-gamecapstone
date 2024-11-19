@@ -59,6 +59,8 @@ public class BendingMatrixBase : DependencyNode<MatrixXs>
         B[0, 1] = B[1, 0] = 
             0.5 * (B[0, 1] + B[1, 0]);
 
+        m_value = B;
+
         setDependentsDirty();
     }
 }
