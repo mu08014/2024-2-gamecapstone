@@ -151,14 +151,6 @@ public class HairComponent : MonoBehaviour {
                 }
                 m_hair_x = new_x;
                 m_hair_v = new Vectors[hairParticles.Count];
-                for (int j = 0; j < hairParticles.Count; j++)
-                {
-                    m_hair_v[j] = new Vectors(3);   ////////////////////////////////////////////////////////////속도 초기값 
-                    m_hair_v[j][0] = 0.01f;
-                    m_hair_v[j][1] = 0.01f;       
-                    m_hair_v[j][2] = 0.01f;
-
-                }
                 int strandId = -1;
                 int fixedCount = 0;
                 for (int j = 0; j < hairParticles.Count; j++)
@@ -171,7 +163,17 @@ public class HairComponent : MonoBehaviour {
                     }
                     else m_hair_fixed.Add(false);
                 }
-
+                for (int j = 0; j < hairParticles.Count; j++)
+                {
+                    m_hair_v[j] = new Vectors(3);
+                    if (m_hair_fixed[j])
+                    {
+                                           ////////////////////////////////////////////////////////////속도 초기값 
+                        m_hair_v[j][0] = 0.01f;
+                        m_hair_v[j][1] = 0.01f;
+                        m_hair_v[j][2] = 0.01f;
+                    }
+                }
                 numofStrands += fixedCount;
                 Debug.Log("Number of Fixed Particle is " + numofStrands);
             }

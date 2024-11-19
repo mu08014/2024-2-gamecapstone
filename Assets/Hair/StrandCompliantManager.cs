@@ -151,12 +151,29 @@ public class StrandCompliantManager : SceneStepper
         }
 
         scene.preComputeLocal(m_dx_scripted, m_dv, dt);
-
+       
+        for (int i = 0; i < m_dv.Size; i++)
+        {
+            if (m_dv[i] > 1)
+                m_dv[i] = 1;
+            else if (m_dv[i] < -1)
+                m_dv[i] = -1;
+        }
+        
         t1 = Time.realtimeSinceStartup;
         m_timing_statistics[0] += (t1 - t0);
         t0 = t1;
 
         localUpdateNumConstraints(m_dx_scripted, m_dv, dt);
+        
+        for (int i = 0; i < m_dv.Size; i++)
+        {
+            if (m_dv[i] > 1)
+                m_dv[i] = 1;
+            else if (m_dv[i] < -1)
+                m_dv[i] = -1;
+        }
+        
         t1 = Time.realtimeSinceStartup;
         m_timing_statistics[1] += (t1 - t0);
         t0 = t1;
@@ -168,10 +185,26 @@ public class StrandCompliantManager : SceneStepper
         t0 = t1;
 
         localStepScene(ref scene, dt, ref m_vplus, m_rhs);
-
+        
+        for (int i = 0; i < m_vplus.Size; i++)
+        {
+            if (m_vplus[i] > 1)
+                m_vplus[i] = 1;
+            else if (m_vplus[i] < -1)
+                m_vplus[i] = -1;
+        }
+        
         m_dv = m_vplus - v;
         m_dx = m_vplus * dt;
-
+        
+        for (int i = 0; i < m_dv.Size; i++)
+        {
+            if (m_dv[i] > 1)
+                m_dv[i] = 1;
+            else if (m_dv[i] < -1)
+                m_dv[i] = -1;
+        }
+        
         if (!m_compute_interhair)
         {
             localUpdateLambda(ref scene, m_dx, m_dv, dt);
@@ -188,17 +221,50 @@ public class StrandCompliantManager : SceneStepper
         t0 = Time.realtimeSinceStartup;
 
         scene.preComputeInterhair(m_dx, m_dv, dt);
+        
+        for (int i = 0; i < m_dv.Size; i++)
+        {
+            if (m_dv[i] > 1)
+                m_dv[i] = 1;
+            else if (m_dv[i] < -1)
+                m_dv[i] = -1;
+        }
+        
         interhairUpdateNumConstraints(m_dxi, m_dv, dt);
-
+        
+        for (int i = 0; i < m_dv.Size; i++)
+        {
+            if (m_dv[i] > 1)
+                m_dv[i] = 1;
+            else if (m_dv[i] < -1)
+                m_dv[i] = -1;
+        }
+        
         computeRHSIncrementalInterhair(scene, dt, m_rhs, m_vplus);
-
+        
+        for (int i = 0; i < m_vplus.Size; i++)
+        {
+            if (m_vplus[i] > 1)
+                m_vplus[i] = 1;
+            else if (m_vplus[i] < -1)
+                m_vplus[i] = -1;
+        }
+        
         t1 = Time.realtimeSinceStartup;
         m_timing_statistics[3] += (t1 - t0);  // compute Interhair Variables
         t0 = t1;
 
         // Ap = Ax0
         computeAp(scene, m_vplus, m_r, dt);
-
+        
+        for (int i = 0; i < m_vplus.Size; i++)
+        {
+            if (m_vplus[i] > 1)
+                m_vplus[i] = 1;
+            else if (m_vplus[i] < -1)
+                m_vplus[i] = -1;
+        }
+        
         // r = b - Ax0
         m_r = m_rhs - m_r;
 
@@ -268,16 +334,48 @@ public class StrandCompliantManager : SceneStepper
 
             res_norm = m_r.norm();
         }
-
+        
+        for (int i = 0; i < m_vplus.Size; i++)
+        {
+            if (m_vplus[i] > 1)
+                m_vplus[i] = 1;
+            else if (m_vplus[i] < -1)
+                m_vplus[i] = -1;
+        }
+        
         m_dv = m_vplus - v;
         m_dx = m_vplus * dt;
-
+        
+        for (int i = 0; i < m_dv.Size; i++)
+        {
+            if (m_dv[i] > 1)
+                m_dv[i] = 1;
+            else if (m_dv[i] < -1)
+                m_dv[i] = -1;
+        }
+        
         localUpdateLambda(ref scene, m_dx, m_dv, dt);
-
+        
+        for (int i = 0; i < m_dv.Size; i++)
+        {
+            if (m_dv[i] > 1)
+                m_dv[i] = 1;
+            else if (m_dv[i] < -1)
+                m_dv[i] = -1;
+        }
+        
         m_scene.storeLambda(m_lambda, m_lambda_v);
 
         updateNextV(ref scene, m_vplus);
-
+        
+        for (int i = 0; i < m_vplus.Size; i++)
+        {
+            if (m_vplus[i] > 1)
+                m_vplus[i] = 1;
+            else if (m_vplus[i] < -1)
+                m_vplus[i] = -1;
+        }
+        
         m_next_x = x + dt * v;
 
         return true;

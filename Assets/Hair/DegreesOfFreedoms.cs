@@ -231,7 +231,7 @@ public class CurvatureBinormals : DependencyNode<List<Vectors>>
 
 
                 m_value[vtx] = 4 * Math.Tan(5 * Math.Acos(denominator - 1)) *
-                                   CMath.findNormal(t1).segment(3, 0);
+                                   CMath.findNormal(t1).segment(0, 3);
             }
             else
             {

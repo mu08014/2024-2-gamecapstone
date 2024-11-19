@@ -78,7 +78,7 @@ public class LoadHairSimulation
             numstrands++;
         }
         scene.resizeSystem(numparticles, numedges, numstrands);
-        List<int> vert_to_dof = new List<int>(numparticles); 
+        List<int> vert_to_dof = new List<int>(numparticles);
         vert_to_dof.AddRange(new int[numparticles]);
         VectorXi dofVars = new VectorXi(numparticles * 4 - numstrands + 1);
         VectorXi dofVerts = new VectorXi(numparticles * 4 - numstrands + 1);
@@ -132,20 +132,20 @@ public class LoadHairSimulation
                 particle_eta.Add(eta);
                 bool isSource = false;
                 particle_state.Add(isSource);
-                pos[0] = hairparticle.GetComponent<HairParticle>().position.x;
-                pos[1] = hairparticle.GetComponent<HairParticle>().position.y;
-                pos[2] = hairparticle.GetComponent<HairParticle>().position.z;
+                pos[0] = hairparticle.GetComponent<HairParticleTestMode>().Position.x;
+                pos[1] = hairparticle.GetComponent<HairParticleTestMode>().Position.y;
+                pos[2] = hairparticle.GetComponent<HairParticleTestMode>().Position.z;
 
                 scene.setPosition(vtx, pos.ToVectors());
                 particle_pos.Add(pos);
 
-                vel[0] = hairparticle.GetComponent<HairParticle>().velocity.x;
-                vel[1] = hairparticle.GetComponent<HairParticle>().velocity.y;
-                vel[2] = hairparticle.GetComponent<HairParticle>().velocity.z;
+                vel[0] = hairparticle.GetComponent<HairParticleTestMode>().Velocity.x;
+                vel[1] = hairparticle.GetComponent<HairParticleTestMode>().Velocity.y;
+                vel[2] = hairparticle.GetComponent<HairParticleTestMode>().Velocity.z;
                 scene.setVelocity(vtx, vel.ToVectors());
 
                 bool fixe = false;
-                fixe = hairparticle.GetComponent<HairParticle>().IsFixed;
+                fixe = hairparticle.GetComponent<HairParticleTestMode>().Fix;
                 scene.setFixed(vtx, fixe);
 
                 if (vtx !=  globalvtx)

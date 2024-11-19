@@ -445,13 +445,13 @@ public class TwoDScene
         {
             m_particle_to_dofs.Add(i);
         }
-        m_dofs_to_component = dofs_to_vars.Clone();
+        m_dofs_to_component = dofs_to_vars;
         m_is_strand_tip = new List<bool>();
         foreach (bool b in tipVerts)
         {
             m_is_strand_tip.Add(b);
         }
-        m_dofs_to_particle = dof_to_vert.Clone();
+        m_dofs_to_particle = dof_to_vert;
     }
 
     public List<string> getParticleTags()
