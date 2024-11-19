@@ -132,20 +132,20 @@ public class LoadHairSimulation
                 particle_eta.Add(eta);
                 bool isSource = false;
                 particle_state.Add(isSource);
-                pos[0] = hairparticle.GetComponent<HairParticle>().Position.x;
-                pos[1] = hairparticle.GetComponent<HairParticle>().Position.y;
-                pos[2] = hairparticle.GetComponent<HairParticle>().Position.z;
+                pos[0] = hairparticle.GetComponent<HairParticle>().position.x;
+                pos[1] = hairparticle.GetComponent<HairParticle>().position.y;
+                pos[2] = hairparticle.GetComponent<HairParticle>().position.z;
 
                 scene.setPosition(vtx, pos.ToVectors());
                 particle_pos.Add(pos);
 
-                vel[0] = hairparticle.GetComponent<HairParticle>().Velocity.x;
-                vel[1] = hairparticle.GetComponent<HairParticle>().Velocity.y;
-                vel[2] = hairparticle.GetComponent<HairParticle>().Velocity.z;
+                vel[0] = hairparticle.GetComponent<HairParticle>().velocity.x;
+                vel[1] = hairparticle.GetComponent<HairParticle>().velocity.y;
+                vel[2] = hairparticle.GetComponent<HairParticle>().velocity.z;
                 scene.setVelocity(vtx, vel.ToVectors());
 
                 bool fixe = false;
-                fixe = hairparticle.GetComponent<HairParticle>().Fix;
+                fixe = hairparticle.GetComponent<HairParticle>().IsFixed;
                 scene.setFixed(vtx, fixe);
 
                 if (vtx !=  globalvtx)
@@ -222,6 +222,6 @@ public class LoadHairSimulation
             ((StrandCompliantManager)scene_stepper).PostStepScene(ref scene, hairsubstep);
 
         }
-        Debug.Log("첫번째 머리카락 파티클 속도 vx : " + scene.getVelocity(0)[0] + " vy : " + scene.getVelocity(0)[1] + " vz : " + scene.getVelocity(0)[2]);
+        Debug.Log("첫번째 머리카락 파티클 속도 vx : " + scene.getVelocity(3)[0] + " vy : " + scene.getVelocity(3)[1] + " vz : " + scene.getVelocity(3)[2]);
     }
 }

@@ -125,18 +125,18 @@ public class HairInterface : MonoBehaviour
                             }
                         }
                     }
-                    GameObject newHairObject = new GameObject("hairparticle");
-                    newHairObject.AddComponent<HairParticle>();
-                    newHairObject.GetComponent<HairParticle>().Position = new Vector3(pos[0], pos[1], pos[2]);
-                    newHairObject.GetComponent<HairParticle>().Velocity = new Vector3(vel[0], vel[1], vel[2]);
-                    newHairObject.GetComponent<HairParticle>().Fix = isFix;
-                    newHairObject.AddComponent<MeshFilter>();
-                    newHairObject.GetComponent<MeshFilter>().mesh = Resources.GetBuiltinResource<Mesh>("Sphere.fbx");
-                    newHairObject.AddComponent<MeshRenderer>();
-                    newHairObject.GetComponent<Renderer>().material = new Material(Shader.Find("Standard"));
-                    newHairObject.transform.localScale = new Vector3(0.3f, 0.3f, 0.3f);
+                    //GameObject newHairObject = new GameObject("hairparticle");
+                    //newHairObject.AddComponent<HairParticle>();
+                    //newHairObject.GetComponent<HairParticle>().position = new Vector3(pos[0], pos[1], pos[2]);
+                    //newHairObject.GetComponent<HairParticle>().velocity = new Vector3(vel[0], vel[1], vel[2]);
+                    //newHairObject.GetComponent<HairParticle>().IsFixed = isFix;
+                    //newHairObject.AddComponent<MeshFilter>();
+                    //newHairObject.GetComponent<MeshFilter>().mesh = Resources.GetBuiltinResource<Mesh>("Sphere.fbx");
+                    //newHairObject.AddComponent<MeshRenderer>();
+                    //newHairObject.GetComponent<Renderer>().material = new Material(Shader.Find("Standard"));
+                    //newHairObject.transform.localScale = new Vector3(0.3f, 0.3f, 0.3f);
 
-                    list.Add(newHairObject);
+                    //list.Add(newHairObject);
                 }
             }
             else
@@ -160,8 +160,8 @@ public class HairInterface : MonoBehaviour
         {
             Vectors x_vec = loadHairSimulation.scene.getPosition(i).Clone();
             Vectors v_vec = loadHairSimulation.scene.getVelocity(i).Clone();
-            hairs[row][col].GetComponent<HairParticle>().Position = new Vector3((float)x_vec[0], (float)x_vec[1], (float)x_vec[2]);
-            hairs[row][col++].GetComponent<HairParticle>().Velocity = new Vector3((float)v_vec[0], (float)v_vec[1], (float)v_vec[2]);
+            hairs[row][col].GetComponent<HairParticle>().position = new Vector3((float)x_vec[0], (float)x_vec[1], (float)x_vec[2]);
+            hairs[row][col++].GetComponent<HairParticle>().velocity = new Vector3((float)v_vec[0], (float)v_vec[1], (float)v_vec[2]);
             if (col >= hairs[row].Count)
             {
                 row++;
@@ -182,8 +182,8 @@ public class HairInterface : MonoBehaviour
             {
                 Vectors x_vec = loadHairSimulation.scene.getPosition(i).Clone();
                 Vectors v_vec = loadHairSimulation.scene.getVelocity(i).Clone();
-                hairs[row][col].GetComponent<HairParticle>().Position = new Vector3((float)x_vec[0], (float)x_vec[1], (float)x_vec[2]);
-                hairs[row][col++].GetComponent<HairParticle>().Velocity = new Vector3((float)v_vec[0], (float)v_vec[1], (float)v_vec[2]);
+                hairs[row][col].GetComponent<HairParticle>().position = new Vector3((float)x_vec[0], (float)x_vec[1], (float)x_vec[2]);
+                hairs[row][col++].GetComponent<HairParticle>().velocity = new Vector3((float)v_vec[0], (float)v_vec[1], (float)v_vec[2]);
                 if (col >= hairs[row].Count)
                 {
                     row++;

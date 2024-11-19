@@ -705,6 +705,7 @@ public class VectorXi
         for (int i = start; i < start + n; i++)
         {
             vectors[i - start] = elements[i];
+            
         }
         return vectors;
     }
@@ -840,10 +841,17 @@ public class TripletXs
     }
 }
 
+[Serializable]
 public class Vectors //<DIM>으로 구현되어 있는거 클래스 변수로 바꿈
 {
     public int DIM;
+    [SerializeField]
     private double[] values;
+
+    public static explicit operator UnityEngine.Vector3(Vectors v)
+    {
+        return new UnityEngine.Vector3((float)v[0], (float)v[1], (float) v[2]);
+    }
 
     public Vectors(int dim)
     {
