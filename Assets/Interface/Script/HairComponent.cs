@@ -151,14 +151,17 @@ public class HairComponent : MonoBehaviour {
                 }
                 m_hair_x = new_x;
                 m_hair_v = new Vectors[hairParticles.Count];
-                int strandId = -1;
+
+
+                
                 int fixedCount = 0;
-                for (int j = 0; j < hairParticles.Count; j++)
+                for (int j = 0; j < particles.Count; j++)
                 {
-                    if (strandId != hairParticles[j].strandID )
+                    if (particles[j].IsFixed)
                     {
                         m_hair_fixed.Add(true);
-                        strandId = hairParticles[j].strandID;
+                        hairParticles[j].strandID = numofStrands;
+                        numofStrands++;
                         fixedCount++;
                     }
                     else m_hair_fixed.Add(false);
@@ -174,7 +177,6 @@ public class HairComponent : MonoBehaviour {
                         m_hair_v[j][2] = 0.01f;
                     }
                 }
-                numofStrands += fixedCount;
                 Debug.Log("Number of Fixed Particle is " + numofStrands);
             }
 
