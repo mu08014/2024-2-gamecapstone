@@ -98,7 +98,7 @@ public class FurMesh : MonoBehaviour
         normals.Clear();
         positions.Clear();
         indices.Clear();
-        
+
         /*
         // native array version
         int vertex_len = _hairs.Count * _hairs[0]._positions.Length;
@@ -134,7 +134,8 @@ public class FurMesh : MonoBehaviour
             head += hair._positions.Length;
         }
         */
-        
+
+
         for (int k = 0; k < _hairs.Count; k++)
         {
             if (k % 10000 == 0) ;
@@ -169,7 +170,7 @@ public class FurMesh : MonoBehaviour
         {
             foreach (var dot in hair.value._positions.Select((value2, index2) => (value2,index2)))
             {
-                HairParticle particle = new HairParticle(dot.value2, hair.index);
+                HairParticle particle = new HairParticle(dot.value2);
                 particles.Add(particle);
                 if (dot.index2 == 0)
                 {
@@ -179,8 +180,8 @@ public class FurMesh : MonoBehaviour
             }
             //Debug.Log("Number of particles in " + hair.index + "th hair is " + particles.Count / (hair.index + 1));
         }
-        //Debug.Log("Number of Hairs is " + _hairs.Count);
 
+        //Debug.Log("Number of Hairs is " + _hairs.Count);
 
         hairMesh.Clear();
 
