@@ -63,9 +63,7 @@ public class FurMesh : MonoBehaviour
         }
     }
 
-    private List<Hair> _hairs = new();
-
-    
+    public List<Hair> _hairs = new();
 
     public void AddHair(Hair hair)
     {
@@ -77,13 +75,23 @@ public class FurMesh : MonoBehaviour
         _hairs.Clear();
     }
     
-    private List<Vector3> tangents = new();
-    private List<Vector2> uvs = new();
-    private List<Vector3> normals = new();
-    private List<Vector3> positions = new();
-    private List<int> indices = new();
-    
-    public void UpdateMesh()
+    public List<Vector3> tangents = new();
+    public List<Vector2> uvs = new();
+    public List<Vector3> normals = new();
+    public List<Vector3> positions = new();
+    public List<int> indices = new();
+
+    public Vector3[] getHairParticlePosArray()
+    {
+        List<Vector3> answer = new();
+        foreach (var hair in _hairs)
+        {
+            answer.AddRange(hair._positions);
+        }
+        return answer.ToArray();
+    }
+
+    public virtual void UpdateMesh()
     {
 
         hairMesh = meshFilter.sharedMesh;
@@ -99,47 +107,9 @@ public class FurMesh : MonoBehaviour
         positions.Clear();
         indices.Clear();
 
-        /*
-        // native array version
-        int vertex_len = _hairs.Count * _hairs[0]._positions.Length;
-        NativeArray<Vector3> tangents = new(vertex_len, Allocator.Temp);
-        NativeArray<Vector3> uvs = new(vertex_len, Allocator.Temp);
-        NativeArray<Vector3> normals = new(vertex_len, Allocator.Temp);
-        NativeArray<Vector3> positions = new(vertex_len, Allocator.Temp);
-        int indices_len = _hairs.Count * (_hairs[0]._positions.Length - 1) * 2;
-        NativeArray<int> indices = new(indices_len, Allocator.Temp);
-
-
-        int head = 0;
-        int indices_count = 0;
-        foreach (Hair hair in _hairs)
-        {
-            tangents[head] = (hair._positions[0] - hair._positions[1]);
-            for (int i = 1; i < hair._positions.Length; i++)
-                tangents[head + i] = (hair._positions[i - 1] - hair._positions[i]);
-
-            for (int i = 0; i < hair._positions.Length; i++)
-            {
-                positions[head + i] = hair._positions[i];
-                normals[head + i] = hair._normal;
-                uvs[head + i] = hair._uv;
-            }
-
-            for (int i = 0; i < hair._positions.Length - 1; i++)
-            {
-                indices[indices_count++] = head + i;
-                indices[indices_count++] = head + i + 1;
-            }
-
-            head += hair._positions.Length;
-        }
-        */
-
 
         for (int k = 0; k < _hairs.Count; k++)
         {
-            if (k % 10000 == 0) ;
-                //yield return null;
 
             Hair hair = _hairs[k];
 
@@ -207,5 +177,10 @@ public class FurMesh : MonoBehaviour
         indices.Dispose();
         */
     }   
+
+    public virtual void UpdateHairPos(Vector3[] pos)
+    {
+        hairMesh.SetVertices(pos);
+    }
 
 }

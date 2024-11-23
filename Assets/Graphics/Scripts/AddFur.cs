@@ -96,7 +96,7 @@ public class AddFur : MonoBehaviour
     }
 
 
-    public void initMesh(GameObject _furmeshPrefab)
+    public virtual void initMesh(GameObject _furmeshPrefab)
 
     {
 
