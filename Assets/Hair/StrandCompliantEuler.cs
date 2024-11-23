@@ -382,14 +382,14 @@ public class SimplicialLDLT
 
             for (int j = i + 1; j < n; j++)
             {
-                if (matrix.GetValue(j, i) != 0) // 비어 있지 않은 요소에 대해서만 계산
+                if (matrix.GetValue(j, i) != 0)
                 {
                     sum = matrix.GetValue(j, i);
                     for (int k = 0; k < i; k++)
                     {
                         sum -= L.GetValue(j, k) * L.GetValue(i, k) * (D.ContainsKey(k) ? D[k] : 0);
                     }
-                    if (D[i] != 0) // D[i]가 0이 아닌지 확인하여 나누기 오류 방지
+                    if (D[i] != 0)
                         L.insert(j, i, sum / D[i]);
                 }
             }

@@ -172,9 +172,9 @@ public class HairComponent : MonoBehaviour {
                     if (m_hair_fixed[j])
                     {
                                            ////////////////////////////////////////////////////////////속도 초기값 
-                        m_hair_v[j][0] = 0.01f;
-                        m_hair_v[j][1] = 0.01f;
-                        m_hair_v[j][2] = 0.01f;
+                        m_hair_v[j][0] = 0.00f;
+                        m_hair_v[j][1] = 0.05f;
+                        m_hair_v[j][2] = 0.00f;
                     }
                 }
                 Debug.Log("Number of Fixed Particle is " + numofStrands);

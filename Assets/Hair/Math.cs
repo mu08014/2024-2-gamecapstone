@@ -16,6 +16,7 @@ public class CMath
     public static double PI_4 = 0.785398163397448309616;
     public static double M_PI = 3.14159265358979323846;
     public static double M_PI_4 = 0.785398163397448309616;
+    public static double epsilon = 1e-16;
 
     public static double cube(double x)
     {
@@ -297,6 +298,11 @@ public class VectorXs
         elements = new List<double>(new double[size]);
     }
 
+    public VectorXs(double[] list)
+    {
+        elements = new List<double>(list);
+    }
+
     public VectorXs(List<double> list, int start, int size)
     {
         if (list.Count == size)
@@ -401,10 +407,7 @@ public class VectorXs
 
     public void setZero()
     {
-        for (int i = 0; i < elements.Count; i++)
-        {
-            elements[i] = 0;
-        }
+        elements = new List<double>(new double[elements.Count]);
     }
 
     public int size()
@@ -453,20 +456,7 @@ public class VectorXs
 
     public void resize(int size)
     {
-        List<double> values = new List<double>(Size);
-        for (int i = 0; i < Size; i++)
-        {
-            values.Add(elements[i]);
-        }
-
-        elements = new List<double>(size);
-        for (int i = 0; i < size; i++)
-        {
-            if (i < values.Count)
-                elements.Add(values[i]);
-            else
-                elements.Add(0);
-        }
+        elements = new List<double>(new double[size]);
     }
 
     public Vectors segment(int start, int n)
@@ -648,6 +638,11 @@ public class VectorXi
     public VectorXi(int size)
     {
         elements = new List<int>(new int[size]);
+    }
+
+    public VectorXi(int[] list)
+    {
+        elements = new List<int>(list);
     }
 
     public int this[int index]
@@ -857,6 +852,12 @@ public class Vectors //<DIM>으로 구현되어 있는거 클래스 변수로 바꿈
     {
         DIM = dim;
         values = new double[dim];
+    }
+
+    public Vectors(double[] list, int dim)
+    {
+        DIM = dim;
+        values = list;
     }
 
     public double this[int index]
@@ -1356,7 +1357,7 @@ public class SparseXs
         matrix = new Dictionary<(int, int), double>();
         foreach (var d in spXs.matrix)
         {
-            if (d.Value != 0)
+            if (Math.Abs(d.Value) > CMath.epsilon)
                 matrix.Add((d.Key.Item1, d.Key.Item2), d.Value);
         }
         Rows = spXs.Rows;
@@ -1379,7 +1380,10 @@ public class SparseXs
         {
             if (result.matrix.ContainsKey((rowB, colB)))
             {
-                result.matrix[(rowB, colB)] += valueB;
+                if (Math.Abs(result.matrix[(rowB, colB)] + valueB) <= CMath.epsilon)
+                    result.matrix.Remove((rowB, colB));
+                else
+                    result.matrix[(rowB, colB)] += valueB;
             }
             else
             {
@@ -1393,9 +1397,12 @@ public class SparseXs
     public static SparseXs operator *(SparseXs b, double a)
     {
         SparseXs result = new SparseXs(b.Rows, b.Cols);
-        foreach (var ((row, col), value) in b.matrix)
+        if (a != 0)
         {
-            result.insert(row, col, value * a);
+            foreach (var ((row, col), value) in b.matrix)
+            {
+                result.insert(row, col, value * a);
+            }
         }
         return result;
     }
@@ -1403,9 +1410,12 @@ public class SparseXs
     public static SparseXs operator *(double a, SparseXs b)
     {
         SparseXs result = new SparseXs(b.Rows, b.Cols);
-        foreach (var ((row, col), value) in b.matrix)
+        if (a != 0)
         {
-            result.insert(row, col, value * a);
+            foreach (var ((row, col), value) in b.matrix)
+            {
+                result.insert(row, col, value * a);
+            }
         }
         return result;
     }
@@ -1418,7 +1428,8 @@ public class SparseXs
         VectorXs result = new VectorXs(a.Rows);
         foreach (var ((rowA, colA), valueA) in a.matrix)
         {
-            result[rowA] += b[colA] * valueA;
+            if (Math.Abs(valueA) > CMath.epsilon)
+                result[rowA] += b[colA] * valueA;
         }
         return result;
     }
@@ -1431,7 +1442,8 @@ public class SparseXs
         Vectors result = new Vectors(a.Rows);
         foreach (var ((rowA, colA), valueA) in a.matrix)
         {
-            result[rowA] += b[colA] * valueA;
+            if (Math.Abs(valueA) > CMath.epsilon)
+                result[rowA] += b[colA] * valueA;
         }
         return result;
     }
@@ -1448,7 +1460,7 @@ public class SparseXs
             for (int colB = 0; colB < b.Cols; colB++)
             {
                 double valueB = b.GetValue(colA, colB);
-                if (valueB != 0.0)
+                if (Math.Abs(valueB) > CMath.epsilon)
                 {
                     double newValue = result.GetValue(rowA, colB) + valueA * valueB;
                     result.insert(rowA, colB, newValue);
@@ -1465,7 +1477,7 @@ public class SparseXs
         {
             Debug.LogError($"Invalid index: row={row}, col={col}");
         }
-        if (value != 0)
+        if (Math.Abs(value) > CMath.epsilon)
             matrix[(row, col)] = value;
     }
 
@@ -1483,9 +1495,11 @@ public class SparseXs
     {
         for (int i = 0; i < tpXs.Size; i++)
         {
-            var key = (tpXs[i].getrow(), tpXs[i].getcol());
-            if (tpXs[i].getvalue() != 0)
+            if (Math.Abs(tpXs[i].getvalue()) > CMath.epsilon)
+            {
+                var key = (tpXs[i].getrow(), tpXs[i].getcol());
                 matrix[key] = tpXs[i].getvalue();
+            }
         }
 
     }
