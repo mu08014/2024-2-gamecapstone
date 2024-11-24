@@ -32,23 +32,23 @@ public class Force
         return new Force(this);
     }
 
-    virtual public void addEnergyToTotal(in VectorXs x, in VectorXs v, in VectorXs m, double E) { }
+    virtual public void addEnergyToTotal(in Vectors x, in Vectors v, in Vectors m, double E) { }
 
-    virtual public void addGradEToTotal(in VectorXs x, in VectorXs v, in VectorXs m, ref VectorXs gradE) { }
+    virtual public void addGradEToTotal(in Vectors x, in Vectors v, in Vectors m, ref Vectors gradE) { }
 
-    virtual public void addHessXToTotal(in VectorXs x, in VectorXs v, in VectorXs m, ref TripletXs hessE) { }
+    virtual public void addHessXToTotal(in Vectors x, in Vectors v, in Vectors m, ref TripletXs hessE) { }
 
-    virtual public void addHessVToTotal(in VectorXs x, in VectorXs v, in VectorXs m, ref TripletXs hessE) { }
+    virtual public void addHessVToTotal(in Vectors x, in Vectors v, in Vectors m, ref TripletXs hessE) { }
 
-    virtual public void addGradEToTotal(in VectorXs x, in VectorXs v, in VectorXs m, ref VectorXs gradE, int pidx) { }
+    virtual public void addGradEToTotal(in Vectors x, in Vectors v, in Vectors m, ref Vectors gradE, int pidx) { }
 
-    virtual public void addHessXToTotal(in VectorXs x, in VectorXs v, in VectorXs m, ref VectorXs hessE, int pidx) { }
+    virtual public void addHessXToTotal(in Vectors x, in Vectors v, in Vectors m, ref Vectors hessE, int pidx) { }
 
-    virtual public void addHessVToTotal(in VectorXs x, in VectorXs v, in VectorXs m, ref VectorXs hessE, int pidx) { }
+    virtual public void addHessVToTotal(in Vectors x, in Vectors v, in Vectors m, ref Vectors hessE, int pidx) { }
 
-    virtual public void computeIntegrationVars(in VectorXs x, in VectorXs v, in VectorXs m, ref VectorXs lambda,
-        ref VectorXs lambda_v, ref TripletXs J, ref TripletXs Jv, ref TripletXs Jxv, ref TripletXs tildeK, ref TripletXs stiffness,
-        ref TripletXs damping, ref VectorXs Phi, ref VectorXs Phiv, in double dt) { }
+    virtual public void computeIntegrationVars(in Vectors x, in Vectors v, in Vectors m, ref Vectors lambda,
+        ref Vectors lambda_v, ref TripletXs J, ref TripletXs Jv, ref TripletXs Jxv, ref TripletXs tildeK, ref TripletXs stiffness,
+        ref TripletXs damping, ref Vectors Phi, ref Vectors Phiv, in double dt) { }
 
     virtual public int numConstraintPos() { return 0; }
 
@@ -73,14 +73,14 @@ public class Force
     virtual public bool isContained(int pidx) { return false; }
 
 
-    virtual public void preCompute(in VectorXs x, in VectorXs v, in VectorXs m, in double dt) { }
+    virtual public void preCompute(in Vectors x, in Vectors v, in Vectors m, in double dt) { }
 
-    virtual public bool isInterHair(in VectorXs lambda, in VectorXs lambda_v)
+    virtual public bool isInterHair(in Vectors lambda, in Vectors lambda_v)
     {
         return false;
     }
 
-    virtual public void storeLambda(in VectorXs lambda, in VectorXs lamda_v) { }
+    virtual public void storeLambda(in Vectors lambda, in Vectors lamda_v) { }
 
     virtual public void postStepScene(in double dt) { }
 

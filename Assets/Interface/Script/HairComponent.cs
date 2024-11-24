@@ -2,14 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
-using Unity.VisualScripting.Antlr3.Runtime.Tree;
-using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.UIElements;
-using static UnityEngine.ParticleSystem;
 
 [ExecuteAlways]
 public class HairComponent : MonoBehaviour {

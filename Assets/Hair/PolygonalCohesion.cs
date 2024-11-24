@@ -39,7 +39,7 @@ public class EdgeEdgePairEEC
     public double time;
     public double alpha_contack;
     public double neighbor_local_coord_contact;
-    public VectorXs avgpos;
+    public Vectors avgpos;
 
     public double count_0;
     public double count_1;
@@ -105,7 +105,7 @@ public class PolygonalCohesion : Force
     private List<List<PointEdgePair>> m_point_edge_pairs_cache;
     private List<int> m_counting_poe_pair_location;
 
-    private VectorXs m_particle_adjacency_hair_size;
+    private Vectors m_particle_adjacency_hair_size;
 
     private Dictionary<int, HashSet<int>> m_adjacency_hair_edges_buffer;
 
@@ -113,16 +113,16 @@ public class PolygonalCohesion : Force
 
     private List<HashSet<int>> m_pp_pair_hash;
 
-    private VectorXs m_particle_length;
+    private Vectors m_particle_length;
 
     private Sorter m_sorter;
 
     private MatrixXs m_edge_buffer;
 
-    private VectorXs m_gradE;
+    private Vectors m_gradE;
     private MatrixXs m_hessE;
     private MatrixXs m_hessV;
-    private VectorXs m_pair_counts;
+    private Vectors m_pair_counts;
 
     private TripletXs m_hess_buffer;
     private bool m_use_decoupled_force;
@@ -136,25 +136,25 @@ public class PolygonalCohesion : Force
     private SparseXs m_dir_f_interhair;
     private SparseXs m_dir_f_interhair_T;
 
-    private VectorXs m_G_f_global;
-    private VectorXs m_iG_v_global;
-    private VectorXs m_G_f_interhair;
+    private Vectors m_G_f_global;
+    private Vectors m_iG_v_global;
+    private Vectors m_G_f_interhair;
 
-    private VectorXs m_u_interhair;
-    private VectorXs m_divu_interhair;
+    private Vectors m_u_interhair;
+    private Vectors m_divu_interhair;
 
-    private VectorXs m_area_v_global;
-    private VectorXs m_area_e_global;
-    private VectorXs m_cur_eta_v_global;
-    private VectorXs m_pressure_v_global;
+    private Vectors m_area_v_global;
+    private Vectors m_area_e_global;
+    private Vectors m_cur_eta_v_global;
+    private Vectors m_pressure_v_global;
 
     private MatrixXs m_rhs_offset_v_global;
     private MatrixXs m_cur_hhrr_v_global;
 
-    private VectorXs m_ce_inter_buffer;
-    private VectorXs m_ce_inter_short_buffer;
-    private VectorXs m_ce_global_buffer;
-    private VectorXs m_cv_buffer;
+    private Vectors m_ce_inter_buffer;
+    private Vectors m_ce_inter_short_buffer;
+    private Vectors m_ce_global_buffer;
+    private Vectors m_cv_buffer;
 
     private List<int> m_pplink_count;
 

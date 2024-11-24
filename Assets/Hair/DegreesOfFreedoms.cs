@@ -11,16 +11,16 @@ using UnityEngine.UIElements;
 using static UnityEngine.GraphicsBuffer;
 
 // Unit : cm for position dofs, no dimension for theta
-public class DOFs : DependencyNode<VectorXs>
+public class DOFs : DependencyNode<Vectors>
 {
     private ushort m_numEdges;
-    public DOFs(in VectorXs dofValues) : base(dofValues)
+    public DOFs(in Vectors dofValues) : base(dofValues)
     {
         m_numEdges = (ushort)((ushort)dofValues.size() / 4);
         setClean();
     }
 
-    public override VectorXs get() { return m_value; }
+    public override Vectors get() { return m_value; }
 
     public Vectors getVertex(ushort vtx)
     {
@@ -93,7 +93,7 @@ public class Edges : DependencyNode<List<Vectors>>
         {
             m_value.Add(new Vectors(3));
         }
-        VectorXs dofs = m_dofs.get();
+        Vectors dofs = m_dofs.get();
         for (ushort vtx = m_firstValidIndex; vtx < size(); ++vtx)
         {
             m_value[vtx] = dofs.segment(4 * (vtx + 1), 3) - dofs.segment(4 * vtx, 3);
@@ -243,11 +243,11 @@ public class CurvatureBinormals : DependencyNode<List<Vectors>>
     }
 }
 
-public class TrigThetas : DependencyNode<Tuple<VectorXs, VectorXs>>
+public class TrigThetas : DependencyNode<Tuple<Vectors, Vectors>>
 {
     protected DOFs m_dofs;
 
-    public TrigThetas(ref DOFs dofs) : base(new Tuple<VectorXs, VectorXs>(new VectorXs(), new VectorXs()))
+    public TrigThetas(ref DOFs dofs) : base(new Tuple<Vectors, Vectors>(new Vectors(), new Vectors()))
     {
         m_dofs = dofs;
         m_dofs.addDependent(this);
@@ -255,7 +255,7 @@ public class TrigThetas : DependencyNode<Tuple<VectorXs, VectorXs>>
 
     public string name() { return "TrigThetas"; }
 
-    public void vdSinCos(int n, in VectorXs a, ref Tuple<VectorXs, VectorXs> t)
+    public void vdSinCos(int n, in Vectors a, ref Tuple<Vectors, Vectors> t)
     {
         for (int i = 0; i < n; i++)
         {
@@ -266,19 +266,19 @@ public class TrigThetas : DependencyNode<Tuple<VectorXs, VectorXs>>
 
     protected override void compute()
     {
-        VectorXs dofs = m_dofs.get();
+        Vectors dofs = m_dofs.get();
         int numThetas = m_dofs.getNumEdges();
         m_value.Item1.resize(numThetas);
         m_value.Item2.resize(numThetas);
 
         // Extract thetas in their own vector for mkl_vlm
-        VectorXs thetasMap = new VectorXs(numThetas);
+        Vectors thetasMap = new Vectors(numThetas);
         for (int i = 0; i < numThetas; i++)
         {
             thetasMap[i] = dofs[i * 4 + 3];
         }
 
-        VectorXs thetaVec = thetasMap;
+        Vectors thetaVec = thetasMap;
         // Compute their sine and cosine
         // assert( typeid(double) == typeid(VecX::scalar) );
         vdSinCos(
@@ -287,24 +287,24 @@ public class TrigThetas : DependencyNode<Tuple<VectorXs, VectorXs>>
         setDependentsDirty();
     }
 
-    public VectorXs getSines() { return get().Item1; }
+    public Vectors getSines() { return get().Item1; }
 
-    public VectorXs getCosines() { return get().Item2; }
+    public Vectors getCosines() { return get().Item2; }
 
 }
 
-public class Kappas : DependencyNode<List<VectorXs>>
+public class Kappas : DependencyNode<List<Vectors>>
 {
     private CurvatureBinormals m_curvatureBinormals;
     private MaterialFrames1 m_materialFrames1;
     private MaterialFrames2 m_materialFrames2;
 
     public Kappas(ref CurvatureBinormals curvatureBinormals, 
-        ref MaterialFrames1 materialFrames1, ref MaterialFrames2 materialFrames2) : base(new List<VectorXs>(curvatureBinormals.size()), 1, curvatureBinormals.size())
+        ref MaterialFrames1 materialFrames1, ref MaterialFrames2 materialFrames2) : base(new List<Vectors>(curvatureBinormals.size()), 1, curvatureBinormals.size())
     {
         for (int i = 0; i < m_size; i++)
         {
-            m_value.Add(new VectorXs(2));
+            m_value.Add(new Vectors(2));
         }
         m_curvatureBinormals = curvatureBinormals;
         m_materialFrames1 = materialFrames1;
@@ -314,7 +314,7 @@ public class Kappas : DependencyNode<List<VectorXs>>
         m_materialFrames2.addDependent(this);
     }
 
-    public VectorXs this[int index]
+    public Vectors this[int index]
     {
         get
         {
@@ -327,26 +327,26 @@ public class Kappas : DependencyNode<List<VectorXs>>
 
     protected override void compute()
     {
-        m_value = new List<VectorXs>(m_size);
+        m_value = new List<Vectors>(m_size);
         for (int i = 0; i < m_size; i++)
         {
-            m_value.Add(new VectorXs(2));
+            m_value.Add(new Vectors(2));
         }
         List<Vectors> curvatureBinormals = m_curvatureBinormals.get();
-        List<VectorXs> materialFrames1 = m_materialFrames1.get();
-        List<VectorXs> materialFrames2 = m_materialFrames2.get();
+        List<Vectors> materialFrames1 = m_materialFrames1.get();
+        List<Vectors> materialFrames2 = m_materialFrames2.get();
 
         for (int vtx = m_firstValidIndex; vtx < size(); ++vtx)
         {
             Vectors kb = curvatureBinormals[vtx];
-            VectorXs m1e = materialFrames1[vtx - 1];
-            VectorXs m2e = materialFrames2[vtx - 1];
-            VectorXs m1f = materialFrames1[vtx];
-            VectorXs m2f = materialFrames2[vtx];
+            Vectors m1e = materialFrames1[vtx - 1];
+            Vectors m2e = materialFrames2[vtx - 1];
+            Vectors m1f = materialFrames1[vtx];
+            Vectors m2f = materialFrames2[vtx];
 
-            m_value[vtx] = new VectorXs(2);
-            m_value[vtx][0] = 0.5 * kb.dot((m2e + m2f).ToVectors());
-            m_value[vtx][1] = -0.5 * kb.dot((m1e + m1f).ToVectors());
+            m_value[vtx] = new Vectors(2);
+            m_value[vtx][0] = 0.5 * kb.dot((m2e + m2f));
+            m_value[vtx][1] = -0.5 * kb.dot((m1e + m1f));
         }
 
         setDependentsDirty();
@@ -405,9 +405,9 @@ public class GradKappas : DependencyNode<List<MatrixXs>>
         List<double> lengths = m_lengths.get();
         List<Vectors> tangents = m_tangents.get();
         List<Vectors> curvatureBinormals = m_curvatureBinormals.get();
-        List<VectorXs> materialFrames1 = m_materialFrames1.get();
-        List<VectorXs> materialFrames2 = m_materialFrames2.get();
-        List<VectorXs> kappas = m_kappas.get();
+        List<Vectors> materialFrames1 = m_materialFrames1.get();
+        List<Vectors> materialFrames2 = m_materialFrames2.get();
+        List<Vectors> kappas = m_kappas.get();
 
         for (int vtx = m_firstValidIndex; vtx < size(); ++vtx)
         {
@@ -420,10 +420,10 @@ public class GradKappas : DependencyNode<List<MatrixXs>>
             Vectors te = tangents[vtx - 1];
             Vectors tf = tangents[vtx];
 
-            VectorXs m1e = materialFrames1[vtx - 1];
-            VectorXs m2e = materialFrames2[vtx - 1];
-            VectorXs m1f = materialFrames1[vtx];
-            VectorXs m2f = materialFrames2[vtx];
+            Vectors m1e = materialFrames1[vtx - 1];
+            Vectors m2e = materialFrames2[vtx - 1];
+            Vectors m1f = materialFrames1[vtx];
+            Vectors m2f = materialFrames2[vtx];
 
             double chi = 1.0 + te.dot(tf);
 
@@ -434,10 +434,10 @@ public class GradKappas : DependencyNode<List<MatrixXs>>
             }
 
             Vectors tilde_t = (te + tf) / chi;
-            Vectors tilde_d1 = ((m1e + m1f) / chi).ToVectors();
-            Vectors tilde_d2 = ((m2e + m2f) / chi).ToVectors();
+            Vectors tilde_d1 = ((m1e + m1f) / chi);
+            Vectors tilde_d2 = ((m2e + m2f) / chi);
 
-            VectorXs kappa = kappas[vtx];
+            Vectors kappa = kappas[vtx];
 
             Vectors Dkappa0De =
                 1.0 / norm_e * (-kappa[0] * tilde_t + tf.cross(tilde_d2));
@@ -457,10 +457,10 @@ public class GradKappas : DependencyNode<List<MatrixXs>>
 
             Vectors kb = curvatureBinormals[vtx];
 
-            gradKappa[3, 0] = -0.5 * kb.dot(m1e.ToVectors());
-            gradKappa[7, 0] = -0.5 * kb.dot(m1f.ToVectors());
-            gradKappa[3, 1] = -0.5 * kb.dot(m2e.ToVectors());
-            gradKappa[7, 1] = -0.5 * kb.dot(m2f.ToVectors());
+            gradKappa[3, 0] = -0.5 * kb.dot(m1e);
+            gradKappa[7, 0] = -0.5 * kb.dot(m1f);
+            gradKappa[3, 1] = -0.5 * kb.dot(m2e);
+            gradKappa[7, 1] = -0.5 * kb.dot(m2f);
             m_value[vtx] = gradKappa;
         }
 
@@ -521,9 +521,9 @@ public class HessKappas : DependencyNode<List<Tuple<MatrixXs, MatrixXs>>>
         List<double> lengths = m_lengths.get();
         List<Vectors> tangents = m_tangents.get();
         List<Vectors> curvatureBinormals = m_curvatureBinormals.get();
-        List<VectorXs> materialFrames1 = m_materialFrames1.get();
-        List<VectorXs> materialFrames2 = m_materialFrames2.get();
-        List<VectorXs> kappas = m_kappas.get();
+        List<Vectors> materialFrames1 = m_materialFrames1.get();
+        List<Vectors> materialFrames2 = m_materialFrames2.get();
+        List<Vectors> kappas = m_kappas.get();
 
         for (int vtx = m_firstValidIndex; vtx < size(); ++vtx)
         {
@@ -543,10 +543,10 @@ public class HessKappas : DependencyNode<List<Tuple<MatrixXs, MatrixXs>>>
             Vectors te = tangents[vtx - 1];
             Vectors tf = tangents[vtx];
 
-            VectorXs m1e = materialFrames1[vtx - 1];
-            VectorXs m2e = materialFrames2[vtx - 1];
-            VectorXs m1f = materialFrames1[vtx];
-            VectorXs m2f = materialFrames2[vtx];
+            Vectors m1e = materialFrames1[vtx - 1];
+            Vectors m2e = materialFrames2[vtx - 1];
+            Vectors m1f = materialFrames1[vtx];
+            Vectors m2f = materialFrames2[vtx];
 
             double chi = 1.0 + te.dot(tf);
 
@@ -557,17 +557,17 @@ public class HessKappas : DependencyNode<List<Tuple<MatrixXs, MatrixXs>>>
             }
 
             Vectors tilde_t = (te + tf) / chi;
-            Vectors tilde_d1 = ((m1e + m1f) / chi).ToVectors();
-            Vectors tilde_d2 = ((m2e + m2f) / chi).ToVectors();
+            Vectors tilde_d1 = ((m1e + m1f) / chi);
+            Vectors tilde_d2 = ((m2e + m2f) / chi);
 
-            VectorXs kappa = kappas[vtx];
+            Vectors kappa = kappas[vtx];
 
             Vectors kb = curvatureBinormals[vtx];
 
             MatrixXs tt_o_tt = CMath.outerProd(tilde_t, tilde_t);
             MatrixXs tf_c_d2t_o_tt = CMath.outerProd(tf.cross(tilde_d2), tilde_t);
             MatrixXs tt_o_tf_c_d2t = tf_c_d2t_o_tt.transpose();
-            MatrixXs kb_o_d2e = CMath.outerProd(kb, m2e.ToVectors());
+            MatrixXs kb_o_d2e = CMath.outerProd(kb, m2e);
             MatrixXs d2e_o_kb = kb_o_d2e.transpose();
 
             MatrixXs Id = CMath.identity(3);
@@ -581,7 +581,7 @@ public class HessKappas : DependencyNode<List<Tuple<MatrixXs, MatrixXs>>>
 
                 MatrixXs te_c_d2t_o_tt = CMath.outerProd(te.cross(tilde_d2), tilde_t);
                 MatrixXs tt_o_te_c_d2t = te_c_d2t_o_tt.transpose();
-                MatrixXs kb_o_d2f = CMath.outerProd(kb, m2f.ToVectors());
+                MatrixXs kb_o_d2f = CMath.outerProd(kb, m2f);
                 MatrixXs d2f_o_kb = kb_o_d2f.transpose();
 
                 MatrixXs D2kappa1Df2 =
@@ -597,20 +597,20 @@ public class HessKappas : DependencyNode<List<Tuple<MatrixXs, MatrixXs>>>
                          CMath.crossMat(tilde_d2));
                 MatrixXs D2kappa1DfDe = D2kappa1DeDf.transpose();
 
-                double D2kappa1Dthetae2 = -0.5 * kb.dot(m2e.ToVectors());
-                double D2kappa1Dthetaf2 = -0.5 * kb.dot(m2f.ToVectors());
+                double D2kappa1Dthetae2 = -0.5 * kb.dot(m2e);
+                double D2kappa1Dthetaf2 = -0.5 * kb.dot(m2f);
                 Vectors D2kappa1DeDthetae =
                     1.0 / norm_e *
-                    (0.5 * kb.dot(m1e.ToVectors()) * tilde_t - 1.0 / chi * tf.cross(m1e.ToVectors()));
+                    (0.5 * kb.dot(m1e) * tilde_t - 1.0 / chi * tf.cross(m1e));
                 Vectors D2kappa1DeDthetaf =
                     1.0 / norm_e *
-                    (0.5 * kb.dot(m1f.ToVectors()) * tilde_t - 1.0 / chi * tf.cross(m1f.ToVectors()));
+                    (0.5 * kb.dot(m1f) * tilde_t - 1.0 / chi * tf.cross(m1f));
                 Vectors D2kappa1DfDthetae =
                     1.0 / norm_f *
-                    (0.5 * kb.dot(m1e.ToVectors()) * tilde_t + 1.0 / chi * te.cross(m1e.ToVectors()));
+                    (0.5 * kb.dot(m1e) * tilde_t + 1.0 / chi * te.cross(m1e));
                 Vectors D2kappa1DfDthetaf =
                     1.0 / norm_f *
-                    (0.5 * kb.dot(m1f.ToVectors()) * tilde_t + 1.0 / chi * te.cross(m1f.ToVectors()));
+                    (0.5 * kb.dot(m1f) * tilde_t + 1.0 / chi * te.cross(m1f));
 
                 DDkappa1.Setblock(3, 3, 0, 0, D2kappa1De2);
                 DDkappa1.Setblock(3, 3, 0, 4, (-1) * D2kappa1De2 + D2kappa1DeDf);
@@ -642,7 +642,7 @@ public class HessKappas : DependencyNode<List<Tuple<MatrixXs, MatrixXs>>>
             {
                 MatrixXs tf_c_d1t_o_tt = CMath.outerProd(tf.cross(tilde_d1), tilde_t);
                 MatrixXs tt_o_tf_c_d1t = tf_c_d1t_o_tt.transpose();
-                MatrixXs kb_o_d1e = CMath.outerProd(kb, m1e.ToVectors());
+                MatrixXs kb_o_d1e = CMath.outerProd(kb, m1e);
                 MatrixXs d1e_o_kb = kb_o_d1e.transpose();
 
                 MatrixXs D2kappa2De2 =
@@ -653,7 +653,7 @@ public class HessKappas : DependencyNode<List<Tuple<MatrixXs, MatrixXs>>>
 
                 MatrixXs te_c_d1t_o_tt = CMath.outerProd(te.cross(tilde_d1), tilde_t);
                 MatrixXs tt_o_te_c_d1t = te_c_d1t_o_tt.transpose();
-                MatrixXs kb_o_d1f = CMath.outerProd(kb, m1f.ToVectors());
+                MatrixXs kb_o_d1f = CMath.outerProd(kb, m1f);
                 MatrixXs d1f_o_kb = kb_o_d1f.transpose();
 
                 MatrixXs D2kappa2Df2 =
@@ -669,20 +669,20 @@ public class HessKappas : DependencyNode<List<Tuple<MatrixXs, MatrixXs>>>
                          CMath.crossMat(tilde_d1));
                 MatrixXs D2kappa2DfDe = D2kappa2DeDf.transpose();
 
-                double D2kappa2Dthetae2 = 0.5 * kb.dot(m1e.ToVectors());
-                double D2kappa2Dthetaf2 = 0.5 * kb.dot(m1f.ToVectors());
+                double D2kappa2Dthetae2 = 0.5 * kb.dot(m1e);
+                double D2kappa2Dthetaf2 = 0.5 * kb.dot(m1f);
                 Vectors D2kappa2DeDthetae =
                     1.0 / norm_e *
-                    (0.5 * kb.dot(m2e.ToVectors()) * tilde_t - 1.0 / chi * tf.cross(m2e.ToVectors()));
+                    (0.5 * kb.dot(m2e) * tilde_t - 1.0 / chi * tf.cross(m2e));
                 Vectors D2kappa2DeDthetaf =
                     1.0 / norm_e *
-                    (0.5 * kb.dot(m2f.ToVectors()) * tilde_t - 1.0 / chi * tf.cross(m2f.ToVectors()));
+                    (0.5 * kb.dot(m2f) * tilde_t - 1.0 / chi * tf.cross(m2f));
                 Vectors D2kappa2DfDthetae =
                     1.0 / norm_f *
-                    (0.5 * kb.dot(m2e.ToVectors()) * tilde_t + 1.0 / chi * te.cross(m2e.ToVectors()));
+                    (0.5 * kb.dot(m2e) * tilde_t + 1.0 / chi * te.cross(m2e));
                 Vectors D2kappa2DfDthetaf =
                     1.0 / norm_f *
-                    (0.5 * kb.dot(m2f.ToVectors()) * tilde_t + 1.0 / chi * te.cross(m2f.ToVectors()));
+                    (0.5 * kb.dot(m2f) * tilde_t + 1.0 / chi * te.cross(m2f));
 
                 DDkappa2.Setblock(3, 3, 0, 0, D2kappa2De2);
                 DDkappa2.Setblock(3, 3, 0, 4, (-1) * D2kappa2De2 + D2kappa2DeDf);
@@ -747,7 +747,7 @@ public class Twists : DependencyNode<List<double>>
     {
         m_value = new List<double>(new double[m_size]);
         List<double> refTwists = m_refTwists.get();
-        VectorXs dofs = m_dofs.get();
+        Vectors dofs = m_dofs.get();
 
         for (int vtx = m_firstValidIndex; vtx < size(); ++vtx)
         {
@@ -799,7 +799,7 @@ public class GradTwists : DependencyNode<List<Vectors>>
 
         for (int vtx = m_firstValidIndex; vtx < size(); ++vtx)
         {
-            VectorXs Dtwist = m_value[vtx].ToVectorXs();
+            Vectors Dtwist = m_value[vtx];
             Dtwist.setZero();
 
             Vectors kb = curvatureBinormals[vtx];
@@ -809,7 +809,7 @@ public class GradTwists : DependencyNode<List<Vectors>>
             Dtwist.SetSegment(4, 3, (-1) * (Dtwist.segment(0, 3) + Dtwist.segment(8, 3)));
             Dtwist[3] = -1;
             Dtwist[7] = 1;
-            m_value[vtx] = Dtwist.ToVectors();
+            m_value[vtx] = Dtwist;
         }
 
         setDependentsDirty();
@@ -909,14 +909,14 @@ public class HessTwists : DependencyNode<List<MatrixXs>>
     }
 }
 
-public class MaterialFrames1 : DependencyNode<List<VectorXs>>
+public class MaterialFrames1 : DependencyNode<List<Vectors>>
 {
     private TrigThetas m_trigThetas;
     private ReferenceFrames1 m_referencesFrames1;
     private ReferenceFrames2 m_referencesFrames2;
 
     public MaterialFrames1(ref TrigThetas trigThetas, ref ReferenceFrames1 referencesFrames1,
-        ref ReferenceFrames2 referencesFrames2) : base(new List<VectorXs>(referencesFrames1.size()), 0, referencesFrames1.size())
+        ref ReferenceFrames2 referencesFrames2) : base(new List<Vectors>(referencesFrames1.size()), 0, referencesFrames1.size())
     {
         m_trigThetas = trigThetas;
         m_referencesFrames1 = referencesFrames1;
@@ -926,7 +926,7 @@ public class MaterialFrames1 : DependencyNode<List<VectorXs>>
         m_referencesFrames2.addDependent(this);
     }
 
-    public VectorXs this[int index]
+    public Vectors this[int index]
     {
         get
         {
@@ -939,20 +939,20 @@ public class MaterialFrames1 : DependencyNode<List<VectorXs>>
 
     protected override void compute()
     {
-        m_value = new List<VectorXs>(m_size);
+        m_value = new List<Vectors>(m_size);
         for (int i = 0; i < m_size; i++)
         {
-            m_value.Add(new VectorXs(3));
+            m_value.Add(new Vectors(3));
         }
-        List<VectorXs> referenceFrames1 = m_referencesFrames1.get();
-        List<VectorXs> referenceFrames2 = m_referencesFrames2.get();
-        VectorXs sinThetas = m_trigThetas.getSines();
-        VectorXs cosThetas = m_trigThetas.getCosines();
+        List<Vectors> referenceFrames1 = m_referencesFrames1.get();
+        List<Vectors> referenceFrames2 = m_referencesFrames2.get();
+        Vectors sinThetas = m_trigThetas.getSines();
+        Vectors cosThetas = m_trigThetas.getCosines();
 
         for (int vtx = m_firstValidIndex; vtx < size(); ++vtx)
         {
-            VectorXs u = referenceFrames1[vtx];
-            VectorXs v = referenceFrames2[vtx];
+            Vectors u = referenceFrames1[vtx];
+            Vectors v = referenceFrames2[vtx];
             double s = sinThetas[vtx];
             double c = cosThetas[vtx];
 
@@ -962,20 +962,20 @@ public class MaterialFrames1 : DependencyNode<List<VectorXs>>
         setDependentsDirty();
     }
 
-    public VectorXs linearMix(in VectorXs u, in VectorXs v, double s, double c)
+    public Vectors linearMix(in Vectors u, in Vectors v, double s, double c)
     {
         return -c * u + s * v;
     }
 }
 
-public class MaterialFrames2 : DependencyNode<List<VectorXs>>
+public class MaterialFrames2 : DependencyNode<List<Vectors>>
 {
     private TrigThetas m_trigThetas;
     private ReferenceFrames1 m_referencesFrames1;
     private ReferenceFrames2 m_referencesFrames2;
 
     public MaterialFrames2(ref TrigThetas trigThetas, ref ReferenceFrames1 referencesFrames1, 
-        ref ReferenceFrames2 referencesFrames2) : base(new List<VectorXs>(referencesFrames1.size()), 0, referencesFrames1.size())
+        ref ReferenceFrames2 referencesFrames2) : base(new List<Vectors>(referencesFrames1.size()), 0, referencesFrames1.size())
     {
         m_trigThetas = trigThetas;
         m_referencesFrames1 = referencesFrames1;
@@ -985,7 +985,7 @@ public class MaterialFrames2 : DependencyNode<List<VectorXs>>
         m_referencesFrames2.addDependent(this);
     }
 
-    public VectorXs this[int index]
+    public Vectors this[int index]
     {
         get
         {
@@ -998,20 +998,20 @@ public class MaterialFrames2 : DependencyNode<List<VectorXs>>
 
     protected override void compute()
     {
-        m_value = new List<VectorXs>(m_size);
+        m_value = new List<Vectors>(m_size);
         for (int i = 0; i < m_size; i++)
         {
-            m_value.Add(new VectorXs(3));
+            m_value.Add(new Vectors(3));
         }
-        List<VectorXs> referenceFrames1 = m_referencesFrames1.get();
-        List<VectorXs> referenceFrames2 = m_referencesFrames2.get();
-        VectorXs sinThetas = m_trigThetas.getSines();
-        VectorXs cosThetas = m_trigThetas.getCosines();
+        List<Vectors> referenceFrames1 = m_referencesFrames1.get();
+        List<Vectors> referenceFrames2 = m_referencesFrames2.get();
+        Vectors sinThetas = m_trigThetas.getSines();
+        Vectors cosThetas = m_trigThetas.getCosines();
 
         for (int vtx = m_firstValidIndex; vtx < size(); ++vtx)
         {
-            VectorXs u = referenceFrames1[vtx];
-            VectorXs v = referenceFrames2[vtx];
+            Vectors u = referenceFrames1[vtx];
+            Vectors v = referenceFrames2[vtx];
             double s = sinThetas[vtx];
             double c = cosThetas[vtx];
 
@@ -1021,25 +1021,25 @@ public class MaterialFrames2 : DependencyNode<List<VectorXs>>
         setDependentsDirty();
     }
 
-    public VectorXs linearMix(in VectorXs u, in VectorXs v, double s, double c)
+    public Vectors linearMix(in Vectors u, in Vectors v, double s, double c)
     {
         return -s * u + c * v;
     }
 }
 
-public class ReferenceFrames1 : DependencyNode<List<VectorXs>>
+public class ReferenceFrames1 : DependencyNode<List<Vectors>>
 {
     private Tangents m_tangents;
     private List<Vectors> m_previousTangents;
     
-    public ReferenceFrames1(ref Tangents tangents) : base(new List<VectorXs>(tangents.size()), 0, tangents.size())
+    public ReferenceFrames1(ref Tangents tangents) : base(new List<Vectors>(tangents.size()), 0, tangents.size())
     {
         m_tangents = tangents;
         m_tangents.addDependent(this);
         storeInitialFrames(new Vectors(3));
     }
 
-    public VectorXs this[int index]
+    public Vectors this[int index]
     {
         get
         {
@@ -1052,10 +1052,10 @@ public class ReferenceFrames1 : DependencyNode<List<VectorXs>>
 
     public void storeInitialFrames(in Vectors initRefFrame1) 
     {
-        m_value = new List<VectorXs>(m_size);
+        m_value = new List<Vectors>(m_size);
         for (int i = 0; i < m_size; i++)
         {
-            m_value.Add(new VectorXs(3));
+            m_value.Add(new Vectors(3));
         }
         List<Vectors> tangents = m_tangents.get();
         Vectors tan0 = tangents[0];
@@ -1065,7 +1065,7 @@ public class ReferenceFrames1 : DependencyNode<List<VectorXs>>
             // If so, just project it on the plane normal to the tangent vector
             Vectors projectedInitRefFrame1 =
                 (initRefFrame1 - initRefFrame1.dot(tan0) * tan0).normalized();
-            m_value[0] = projectedInitRefFrame1.ToVectorXs();
+            m_value[0] = projectedInitRefFrame1;
         } else  // If a valid initial first reference frame hasn't been provided, use
                 // an arbitrary one
         {
@@ -1076,8 +1076,8 @@ public class ReferenceFrames1 : DependencyNode<List<VectorXs>>
         for (int vtx = 1; vtx < size(); ++vtx)
         {
             m_value[vtx] = CMath.orthonormalParallelTransport(
-                m_value[vtx - 1].ToVectors(), tangents[vtx - 1], tangents[vtx]).ToVectorXs();
-            VectorXs v = m_value[vtx];
+                m_value[vtx - 1], tangents[vtx - 1], tangents[vtx]);
+            Vectors v = m_value[vtx];
             CMath.orthoNormalize(ref v, tangents[vtx]);
         }
         // Store tangents backup for time-parallel transport
@@ -1089,10 +1089,10 @@ public class ReferenceFrames1 : DependencyNode<List<VectorXs>>
 
     protected override void compute()
     {
-        m_value = new List<VectorXs>(m_size);
+        m_value = new List<Vectors>(m_size);
         for (int i = 0; i < m_size; i++)
         {
-            m_value.Add(new VectorXs(3));
+            m_value.Add(new Vectors(3));
         }
         List<Vectors> tangents = m_tangents.get();
 
@@ -1101,9 +1101,9 @@ public class ReferenceFrames1 : DependencyNode<List<VectorXs>>
             Vectors previousTangent = m_previousTangents[vtx];
             Vectors currentTangent = tangents[vtx];
 
-            m_value[vtx] = CMath.orthonormalParallelTransport(m_value[vtx].ToVectors(), previousTangent,
-                                                        currentTangent).ToVectorXs();
-            VectorXs v = m_value[vtx];
+            m_value[vtx] = CMath.orthonormalParallelTransport(m_value[vtx], previousTangent,
+                                                        currentTangent);
+            Vectors v = m_value[vtx];
             CMath.orthoNormalize(ref v, currentTangent);
             m_value[vtx] = v;
 
@@ -1115,13 +1115,13 @@ public class ReferenceFrames1 : DependencyNode<List<VectorXs>>
     }
 }
 
-public class ReferenceFrames2 : DependencyNode<List<VectorXs>>
+public class ReferenceFrames2 : DependencyNode<List<Vectors>>
 {
     private Tangents m_tangents;
     private ReferenceFrames1 m_referenceFrames1;
 
     public ReferenceFrames2(ref Tangents tangents, ref ReferenceFrames1 referenceFrames1)
-      : base(new List<VectorXs>(tangents.size()), 1, tangents.size())
+      : base(new List<Vectors>(tangents.size()), 1, tangents.size())
     {
         m_tangents = tangents;
         m_referenceFrames1 = referenceFrames1;
@@ -1129,7 +1129,7 @@ public class ReferenceFrames2 : DependencyNode<List<VectorXs>>
         m_referenceFrames1.addDependent(this);
     }
 
-    public VectorXs this[int index]
+    public Vectors this[int index]
     {
         get
         {
@@ -1142,17 +1142,17 @@ public class ReferenceFrames2 : DependencyNode<List<VectorXs>>
 
     protected override void compute()
     {
-        m_value = new List<VectorXs>(m_size);
+        m_value = new List<Vectors>(m_size);
         for (int vtx = 0; vtx < m_size; ++vtx)
         {
-            m_value.Add(new VectorXs(3));
+            m_value.Add(new Vectors(3));
         }
         List<Vectors> tangents = m_tangents.get();
-        List<VectorXs> referenceFrames1 = m_referenceFrames1.get();
+        List<Vectors> referenceFrames1 = m_referenceFrames1.get();
 
         for (int vtx = m_firstValidIndex; vtx < size(); ++vtx)
         {
-            m_value[vtx] = tangents[vtx].cross(referenceFrames1[vtx].ToVectors()).ToVectorXs();
+            m_value[vtx] = tangents[vtx].cross(referenceFrames1[vtx]);
         }
 
         setDependentsDirty();
@@ -1188,26 +1188,26 @@ public class ReferenceTwists : DependencyNode<List<double>>
     {
         m_value = new List<double>(new double[m_size]);
         List<Vectors> tangents = m_tangents.get();
-        List<VectorXs> referenceFrames1 = m_referenceFrames1.get();
+        List<Vectors> referenceFrames1 = m_referenceFrames1.get();
         for (int vtx = 0; vtx < m_firstValidIndex; ++vtx)
         {
             m_value[vtx] = 0.0;
         }
         for (int vtx = m_firstValidIndex; vtx < size(); ++vtx)
         {
-            VectorXs u0 = referenceFrames1[vtx - 1];
-            VectorXs u1 = referenceFrames1[vtx];
+            Vectors u0 = referenceFrames1[vtx - 1];
+            Vectors u1 = referenceFrames1[vtx];
             Vectors tangent = tangents[vtx];
 
             // transport reference frame to next edge
-            Vectors ut = CMath.orthonormalParallelTransport(u0.ToVectors(), tangents[vtx - 1], tangent);
+            Vectors ut = CMath.orthonormalParallelTransport(u0, tangents[vtx - 1], tangent);
 
             // rotate by current value of reference twist
             double beforeTwist = m_value[vtx];
             CMath.rotateAxisAngle(ref ut, tangent, beforeTwist);
 
             // compute increment to reference twist to align reference frames
-            m_value[vtx] = beforeTwist + CMath.signedAngle(ut, u1.ToVectors(), tangent);
+            m_value[vtx] = beforeTwist + CMath.signedAngle(ut, u1, tangent);
         }
 
         setDependentsDirty();

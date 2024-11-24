@@ -1,12 +1,5 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using System.Text.RegularExpressions;
-using Unity.VisualScripting;
-using UnityEngine;
-using UnityEngine.UIElements;
-using UnityEngine.WSA;
 
 public struct StrandState
 {
@@ -30,7 +23,7 @@ public struct StrandState
     public HessTwists m_hessTwists;
     public BendingProducts m_bendingProducts;
 
-    public StrandState(in VectorXs initDoFs,
+    public StrandState(in Vectors initDoFs,
         ref BendingMatrixBase bendingMatrixBase)
     {
         m_dofs = new DOFs(initDoFs);
@@ -73,7 +66,7 @@ public struct StartState
     public MaterialFrames2 m_materialFrames2;
     public Kappas m_kappas;
 
-    public StartState(in VectorXs initDoFs)
+    public StartState(in Vectors initDoFs)
     {
         m_dofs = new DOFs(initDoFs);
         m_edges = new Edges(ref m_dofs);
@@ -102,13 +95,13 @@ public class StrandForce : Force
 
     // increase memory, reduce re-computation
     private double m_strandEnergyUpdate;
-    private VectorXs m_strandForceUpdate;
+    private Vectors m_strandForceUpdate;
     private TripletXs m_strandHessianUpdate;
     private SparseXs m_hess;
 
     // Linear Compliant Implicit Euler solve
-    private VectorXs m_lambda;
-    private VectorXs m_lambda_v;
+    private Vectors m_lambda;
+    private Vectors m_lambda_v;
 
     //// Strand State (implicitly the end of timestep state, evolved from rest
     ///config) ////////////////////////
@@ -141,7 +134,7 @@ public class StrandForce : Force
         m_strandState = new StrandState();
         m_startState = new StartState();
         m_strandParams = m_scene.getStrandParameters(parameterIndex);
-        VectorXs initDoFs = new VectorXs(getNumVertices() * 4 - 1);
+        Vectors initDoFs = new Vectors(getNumVertices() * 4 - 1);
         for (int i = 0; i < getNumVertices(); ++i)
         {
              initDoFs.SetSegment(i * 4, 3,
@@ -154,8 +147,8 @@ public class StrandForce : Force
         resizeInternals();
         freezeRestShape(0, getNumEdges(), 0);
 
-        m_lambda = new VectorXs(numConstraintNonViscous());
-        m_lambda_v = new VectorXs(numConstraintViscous());
+        m_lambda = new Vectors(numConstraintNonViscous());
+        m_lambda_v = new Vectors(numConstraintViscous());
     }
 
     public List<Vectors> alterRestKappas()
@@ -216,7 +209,7 @@ public class StrandForce : Force
         }
     }
 
-    public void updateRestShape(in VectorXs dof_restshape, double damping)
+    public void updateRestShape(in Vectors dof_restshape, double damping)
     {
         StartState restshape_state = new StartState(dof_restshape);
 
@@ -230,7 +223,7 @@ public class StrandForce : Force
 
         for (int vtx = 0; vtx < nedges; ++vtx)
         {
-            m_restKappas[vtx] = (1 - damping) * restshape_state.m_kappas[vtx].ToVectors() +
+            m_restKappas[vtx] = (1 - damping) * restshape_state.m_kappas[vtx] +
                                 damping * m_restKappas[vtx];
             m_restTwists[vtx] = (1 - damping) * restshape_state.m_twists[vtx] +
                                 damping * m_restTwists[vtx];
@@ -267,7 +260,7 @@ public class StrandForce : Force
         throw new System.NotImplementedException();
     }
 
-    public override void preCompute(in VectorXs x, in VectorXs v, in VectorXs m, in double dt)
+    public override void preCompute(in Vectors x, in Vectors v, in Vectors m, in double dt)
     {
         base.preCompute(x, v, m, dt);
     }
@@ -284,15 +277,15 @@ public class StrandForce : Force
 
         for (int vtx = begin; vtx < end; ++vtx)
         {
-            m_restKappas[vtx] = (1 - damping) * m_strandState.m_kappas[vtx].ToVectors() + damping * m_restKappas[vtx];
+            m_restKappas[vtx] = (1 - damping) * m_strandState.m_kappas[vtx] + damping * m_restKappas[vtx];
             m_restTwists[vtx] = (1 - damping) * m_strandState.m_twists[vtx] + damping * m_restTwists[vtx];
         }
     }
 
-    public override void computeIntegrationVars(in VectorXs x, in VectorXs v, in VectorXs m, ref VectorXs lambda, ref VectorXs lambda_v, ref TripletXs J, ref TripletXs Jv, ref TripletXs Jxv, ref TripletXs tildeK, ref TripletXs stiffness, ref TripletXs damping, ref VectorXs Phi, ref VectorXs Phiv, in double dt)
+    public override void computeIntegrationVars(in Vectors x, in Vectors v, in Vectors m, ref Vectors lambda, ref Vectors lambda_v, ref TripletXs J, ref TripletXs Jv, ref TripletXs Jxv, ref TripletXs tildeK, ref TripletXs stiffness, ref TripletXs damping, ref Vectors Phi, ref Vectors Phiv, in double dt)
     {
-        VectorXs futureStrandDoFs =
-            x.segment(m_scene.getDof(m_verts[0]), getNumVertices() * 4 - 1).ToVectorXs();
+        Vectors futureStrandDoFs =
+            x.segment(m_scene.getDof(m_verts[0]), getNumVertices() * 4 - 1);
         if (futureStrandDoFs != m_strandState.m_dofs.get())
         {
             m_strandState.m_dofs.set(futureStrandDoFs);
@@ -304,7 +297,7 @@ public class StrandForce : Force
             lambda.SetSegment(m_internal_index_pos + ncnv, numConstraintViscous(),
                 m_lambda_v);
 
-        VectorXs combinedLambda = m_lambda;
+        Vectors combinedLambda = m_lambda;
         if (m_strandParams.m_accumulateWithViscous)
         {
             if (!m_strandParams.m_accumulateVisCousOnlyForBendingModes)
@@ -375,14 +368,14 @@ public class StrandForce : Force
         }
     }
 
-    public override void storeLambda(in VectorXs lambda, in VectorXs lamda_v)
+    public override void storeLambda(in Vectors lambda, in Vectors lamda_v)
     {
         int ncnv = numConstraintNonViscous();
-        m_lambda = lambda.segment(m_internal_index_pos, ncnv).ToVectorXs();
+        m_lambda = lambda.segment(m_internal_index_pos, ncnv);
         if (m_strandParams.m_accumulateWithViscous)
         {
             m_lambda_v =
-                lambda.segment(m_internal_index_pos + ncnv, numConstraintViscous()).ToVectorXs();
+                lambda.segment(m_internal_index_pos + ncnv, numConstraintViscous());
         }
     }
 
@@ -470,9 +463,9 @@ public class StrandForce : Force
         return numTildeK;
     }
 
-    public void updateStartDoFs(in VectorXs x_startOfStep) 
+    public void updateStartDoFs(in Vectors x_startOfStep) 
     {
-        VectorXs currentStrandDoFs = new VectorXs(getNumVertices() * 4 - 1);
+        Vectors currentStrandDoFs = new Vectors(getNumVertices() * 4 - 1);
         currentStrandDoFs.SetSegment(0, getNumVertices() * 4 - 1, x_startOfStep.segment(
         m_scene.getDof(m_verts[0]), getNumVertices() * 4 - 1));
         m_startState.m_dofs.set(currentStrandDoFs);
@@ -492,7 +485,7 @@ public class Viscous
                                                        strand.getNumVertices());
     }
 
-    public static VectorXs kappaBar(in StrandForce strand, int vtx)
+    public static Vectors kappaBar(in StrandForce strand, int vtx)
     {
         return strand.m_startState.m_kappas[vtx];
     }
@@ -532,8 +525,8 @@ public class NonViscous
         return strand.m_strandParams.bendingMatrix(vtx, strand.getNumVertices());
     }
 
-    public static VectorXs kappaBar(in StrandForce strand, int vtx) {
-        return strand.m_restKappas[vtx].ToVectorXs();
+    public static Vectors kappaBar(in StrandForce strand, int vtx) {
+        return strand.m_restKappas[vtx];
     }
 
     public static double kt(in StrandForce strand, int vtx)
@@ -563,8 +556,8 @@ public class BendingForceViscous
 
     public static void accumulateIntegrationVars(in int pos_start, in int j_start,
         in int tildek_start, in int global_start_dof,
-        StrandForce strand, ref VectorXs lambda, ref TripletXs J, ref TripletXs tildeK,
-        ref TripletXs stiffness, ref VectorXs Phi, in int lambda_start)
+        StrandForce strand, ref Vectors lambda, ref TripletXs J, ref TripletXs tildeK,
+        ref TripletXs stiffness, ref Vectors Phi, in int lambda_start)
     {
         MatrixXs B = Viscous.bendingMatrix(strand, 1);
         double b = B[0, 0];  // assumes circular rods
@@ -575,8 +568,8 @@ public class BendingForceViscous
             int dsecond = global_start_dof + 4 * vtx;
             int dthird = global_start_dof + 4 * (vtx + 1);
 
-            VectorXs kappaBar = Viscous.kappaBar(strand, vtx);
-            VectorXs kappa = strand.m_strandState.m_kappas[vtx];
+            Vectors kappaBar = Viscous.kappaBar(strand, vtx);
+            Vectors kappa = strand.m_strandState.m_kappas[vtx];
             double ilen = strand.m_invVoronoiLengths[vtx];
 
             int idx_pos = pos_start + 2 * (vtx - 1);
@@ -612,8 +605,8 @@ public class BendingForceNonViscous
 
     public static void accumulateIntegrationVars(in int pos_start, in int j_start,
         in int tildek_start, in int global_start_dof,
-        StrandForce strand, ref VectorXs lambda, ref TripletXs J, ref TripletXs tildeK,
-        ref TripletXs stiffness, ref VectorXs Phi, in int lambda_start)
+        StrandForce strand, ref Vectors lambda, ref TripletXs J, ref TripletXs tildeK,
+        ref TripletXs stiffness, ref Vectors Phi, in int lambda_start)
     {
         MatrixXs B = NonViscous.bendingMatrix(strand, 1);
         double b = B[0, 0];  // assumes circular rods
@@ -624,8 +617,8 @@ public class BendingForceNonViscous
             int dsecond = global_start_dof + 4 * vtx;
             int dthird = global_start_dof + 4 * (vtx + 1);
 
-            VectorXs kappaBar = NonViscous.kappaBar(strand, vtx);
-            VectorXs kappa = strand.m_strandState.m_kappas[vtx];
+            Vectors kappaBar = NonViscous.kappaBar(strand, vtx);
+            Vectors kappa = strand.m_strandState.m_kappas[vtx];
 
             double ilen = strand.m_invVoronoiLengths[vtx];
 
@@ -694,8 +687,8 @@ public class StretchingForceViscous
     public static void accumulateIntegrationVars(
         in int pos_start, in int j_start,
         in int tildek_start, in int global_start_dof,
-        StrandForce strand, ref VectorXs lambda, ref TripletXs J, ref TripletXs tildeK,
-        ref TripletXs stiffness, ref VectorXs Phi, in int lambda_start)
+        StrandForce strand, ref Vectors lambda, ref TripletXs J, ref TripletXs tildeK,
+        ref TripletXs stiffness, ref Vectors Phi, in int lambda_start)
     {
         for (int vtx = s_first; vtx < strand.getNumVertices() - s_last; ++vtx)
         {
@@ -709,7 +702,7 @@ public class StretchingForceViscous
                 new Triplets(idx_pos, idx_pos,
                          Viscous.ks(strand, vtx) / Viscous.ellBar(strand, vtx));
 
-            VectorXs edge = strand.m_strandState.m_tangents[vtx].ToVectorXs();
+            Vectors edge = strand.m_strandState.m_tangents[vtx];
             int idx_j = j_start + 6 * vtx;
             for (int r = 0; r < 3; ++r)
             {
@@ -728,8 +721,8 @@ public class StretchingForceNonViscous
     public static void accumulateIntegrationVars(
         in int pos_start, in int j_start,
         in int tildek_start, in int global_start_dof,
-        StrandForce strand, ref VectorXs lambda, ref TripletXs J, ref TripletXs tildeK,
-        ref TripletXs stiffness, ref VectorXs Phi, in int lambda_start)
+        StrandForce strand, ref Vectors lambda, ref TripletXs J, ref TripletXs tildeK,
+        ref TripletXs stiffness, ref Vectors Phi, in int lambda_start)
     {
         for (int vtx = s_first; vtx < strand.getNumVertices() - s_last; ++vtx)
         {
@@ -743,7 +736,7 @@ public class StretchingForceNonViscous
                 new Triplets(idx_pos, idx_pos,
                          NonViscous.ks(strand, vtx) / NonViscous.ellBar(strand, vtx));
 
-            VectorXs edge = strand.m_strandState.m_tangents[vtx].ToVectorXs();
+            Vectors edge = strand.m_strandState.m_tangents[vtx];
             int idx_j = j_start + 6 * vtx;
             for (int r = 0; r < 3; ++r)
             {
@@ -783,8 +776,8 @@ public class TwistingForceViscous
     public static void accumulateIntegrationVars(
         in int pos_start, in int j_start,
         in int tildek_start, in int global_start_dof,
-        StrandForce strand, ref VectorXs lambda, ref TripletXs J, ref TripletXs tildeK,
-        ref TripletXs stiffness, ref VectorXs Phi, in int lambda_start)
+        StrandForce strand, ref Vectors lambda, ref TripletXs J, ref TripletXs tildeK,
+        ref TripletXs stiffness, ref Vectors Phi, in int lambda_start)
     {
         for (int vtx = s_first; vtx < strand.getNumVertices() - s_last; ++vtx)
         {
@@ -801,7 +794,7 @@ public class TwistingForceViscous
             Phi[idx_pos] = twist - undeformedTwist;
             stiffness[idx_pos] = new Triplets(idx_pos, idx_pos, kt * ilen);
 
-            VectorXs gt = (strand.m_strandState.m_gradTwists[vtx]).ToVectorXs();
+            Vectors gt = (strand.m_strandState.m_gradTwists[vtx]);
             int idx_j = j_start + 11 * (vtx - 1);
             for (int r = 0; r < 4; ++r)
             {
@@ -822,8 +815,8 @@ public class TwistingForceNonViscous
     public static void accumulateIntegrationVars(
         in int pos_start, in int j_start,
         in int tildek_start, in int global_start_dof,
-        StrandForce strand, ref VectorXs lambda, ref TripletXs J, ref TripletXs tildeK,
-        ref TripletXs stiffness, ref VectorXs Phi, in int lambda_start)
+        StrandForce strand, ref Vectors lambda, ref TripletXs J, ref TripletXs tildeK,
+        ref TripletXs stiffness, ref Vectors Phi, in int lambda_start)
     {
         for (int vtx = s_first; vtx < strand.getNumVertices() - s_last; ++vtx)
         {
@@ -839,7 +832,7 @@ public class TwistingForceNonViscous
             Phi[idx_pos] = twist - undeformedTwist;
             stiffness[idx_pos] = new Triplets(idx_pos, idx_pos, kt * ilen);
 
-            VectorXs gt = (strand.m_strandState.m_gradTwists[vtx]).ToVectorXs();
+            Vectors gt = (strand.m_strandState.m_gradTwists[vtx]);
             int idx_j = j_start + 11 * (vtx - 1);
             for (int r = 0; r < 4; ++r)
             {

@@ -1,7 +1,4 @@
-using UnityEditorInternal;
 using UnityEngine;
-using Unity.Collections;
-using UnityEngine.Rendering;
 
 public class GLTest : MonoBehaviour
 {

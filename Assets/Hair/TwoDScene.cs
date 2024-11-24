@@ -44,8 +44,8 @@ public struct Script
     TYPE type;
     FUNC func;
     int index;
-    VectorXs v;
-    VectorXs origin;
+    Vectors v;
+    Vectors origin;
     double start;
     double end;
     double ease_start;
@@ -122,7 +122,7 @@ public class WetHairParameter
     public bool viscous_solve;
 
     public MASS_UPDATE_MODE mass_update_mode;
-    public VectorXs gravity;
+    public Vectors gravity;
 
     double max_velocity_ratio;
 
@@ -177,7 +177,7 @@ public class WetHairParameter
         viscous_solve = false;
         apply_coriolis = false;
         mass_update_mode = (MASS_UPDATE_MODE)MUM_MOMENTUM;
-        gravity = new VectorXs(3);
+        gravity = new Vectors(3);
         gravity[0] = 0.0;
         gravity[1] = -981.0;
         gravity[2] = 0.0;
@@ -187,15 +187,15 @@ public class WetHairParameter
 
 public class TwoDScene
 {
-    private VectorXs m_base_x;
-    private VectorXs m_x;
-    private VectorXs m_v;
-    private VectorXs m_m;
-    private VectorXs m_rest_m = new VectorXs();
-    private VectorXs m_radii;
-    private VectorXs m_interpolated_m;
+    private Vectors m_base_x;
+    private Vectors m_x;
+    private Vectors m_v;
+    private Vectors m_m;
+    private Vectors m_rest_m = new Vectors();
+    private Vectors m_radii;
+    private Vectors m_interpolated_m;
 
-    private VectorXs m_fluid_drag_buffer = new VectorXs();
+    private Vectors m_fluid_drag_buffer = new Vectors();
 
     private List<int> m_particle_to_dofs = new List<int>();
     private VectorXi m_dofs_to_component = new VectorXi(0);
@@ -221,10 +221,10 @@ public class TwoDScene
     private List<bool> m_fixed;
 
     private List<Tuple<int, int>> m_edges;
-    private VectorXs m_edge_radii;
-    private VectorXs m_edge_rest_radii = new VectorXs();
-    private VectorXs m_edge_rest_length = new VectorXs();
-    private VectorXs m_edge_poisson_ratio = new VectorXs();
+    private Vectors m_edge_radii;
+    private Vectors m_edge_rest_radii = new Vectors();
+    private Vectors m_edge_rest_length = new Vectors();
+    private Vectors m_edge_poisson_ratio = new Vectors();
 
     private List<Force> m_forces;
     private List<Force> m_external_forces = new List<Force>();
@@ -237,9 +237,9 @@ public class TwoDScene
 
     private List<int> m_script_group;
 
-    private List<VectorXs> m_scripted_translate;
+    private List<Vectors> m_scripted_translate;
 
-    private List<VectorXs> m_scripted_rotation;
+    private List<Vectors> m_scripted_rotation;
 
     private List<int> m_particle_to_hair_local_indices;
 
@@ -274,15 +274,15 @@ public class TwoDScene
 
     public TwoDScene(in bool isMassSpring)
     {
-        m_x = new VectorXs();
-        m_base_x = new VectorXs();
-        m_v = new VectorXs();
-        m_m = new VectorXs();
-        m_interpolated_m = new VectorXs();
+        m_x = new Vectors();
+        m_base_x = new Vectors();
+        m_v = new Vectors();
+        m_m = new Vectors();
+        m_interpolated_m = new Vectors();
         m_fixed = new List<bool>();
-        m_radii = new VectorXs();
+        m_radii = new Vectors();
         m_edges = new List<Tuple<int, int>>();
-        m_edge_radii = new VectorXs();
+        m_edge_radii = new Vectors();
         m_forces = new List<Force>();
         m_particle_tags = new List<string>();
         m_massSpringSim = isMassSpring;
@@ -301,9 +301,9 @@ public class TwoDScene
         m_interpolated_m = otherscene.m_interpolated_m;
         m_rest_m = otherscene.m_rest_m;
         m_fixed = otherscene.m_fixed;
-        m_radii = new VectorXs();
+        m_radii = new Vectors();
         m_edges = new List<Tuple<int, int>>();
-        m_edge_radii = new VectorXs();
+        m_edge_radii = new Vectors();
         m_forces = new List<Force>(otherscene.m_forces.Count);
         m_particle_tags = new List<String>();
         m_fluid_sim = null;
@@ -329,12 +329,12 @@ public class TwoDScene
         return false;
     }
 
-    public VectorXs getX()
+    public Vectors getX()
     {
         return m_x;
     }
 
-    public VectorXs getV()
+    public Vectors getV()
     {
         return m_v;
     }
@@ -375,7 +375,7 @@ public class TwoDScene
         }
     }
 
-    public VectorXs getRadii()
+    public Vectors getRadii()
     {
         return m_radii;
     }
@@ -685,7 +685,7 @@ public class TwoDScene
                             m_strandEquilibriumParameters[i].m_curl_density,
                             m_strandEquilibriumParameters[i].m_root_length);
             int nverts = m_strandEquilibriumParameters[i].m_vertices.Count;
-            VectorXs dof_restshape = new VectorXs(nverts * 4 - 1);
+            Vectors dof_restshape = new Vectors(nverts * 4 - 1);
             dof_restshape.setZero();
 
             for (int j = 0; j < nverts; ++j)
@@ -700,7 +700,7 @@ public class TwoDScene
 
     public void initializeScriptedGroup()
     {
-        m_scripted_translate = new List<VectorXs>(0);
+        m_scripted_translate = new List<Vectors>(0);
 
         applyScript(0);
     }
@@ -710,7 +710,7 @@ public class TwoDScene
         return m_fixed[particle];
     }
 
-    public void updateCurlyHair(in double dL, ref List<VectorXs> vertices,
+    public void updateCurlyHair(in double dL, ref List<Vectors> vertices,
                      double curl_radius, double curl_density,
                      double root_length)
     {
@@ -719,17 +719,17 @@ public class TwoDScene
             return;
 
         // generate an orthonormal frame
-        VectorXs initnorm = (vertices[1] - vertices[0]).normalized();
+        Vectors initnorm = (vertices[1] - vertices[0]).normalized();
         vertices[1] = vertices[0] + initnorm * root_length;
 
-        VectorXs p1;
+        Vectors p1;
         p1 = CMath.findNormal(initnorm);
-        VectorXs p2 = p1.cross(initnorm);
+        Vectors p2 = p1.cross(initnorm);
 
         double xa = CMath.M_PI / (curl_density * 4);  // 0 // start curve parameter
         double xb = 0;                          // end curve parameter
 
-        VectorXs freepoint = vertices[1];
+        Vectors freepoint = vertices[1];
 
         for (int j = 2; j < nv; ++j)
         {
@@ -789,7 +789,7 @@ public class TwoDScene
         return m_x.Size;
     }
 
-    public void preComputeLocal(in VectorXs dx, in VectorXs dv, double dt)
+    public void preComputeLocal(in Vectors dx, in Vectors dv, double dt)
     {
         int nfl = m_hair_internal_forces.Count;
 
@@ -821,8 +821,8 @@ public class TwoDScene
         }
         else
         {
-            VectorXs nx = m_x + dx;
-            VectorXs nv = m_v + dv;
+            Vectors nx = m_x + dx;
+            Vectors nv = m_v + dv;
             Parallel.For(0, nfl, (i) => {
                 foreach (Force f in m_hair_internal_forces[i])
                 {
@@ -898,28 +898,28 @@ public class TwoDScene
         num_tildeK_ = m_constraint_idx[5];
     }
 
-    public void localPostPreprocess(ref VectorXs lambda, ref VectorXs lambda_v,
+    public void localPostPreprocess(ref Vectors lambda, ref Vectors lambda_v,
         ref TripletXs J, ref TripletXs Jv,
         ref TripletXs Jxv, ref TripletXs tildeK,
         ref TripletXs stiffness,
-        ref TripletXs damping, ref VectorXs Phi,
-        ref VectorXs Phiv, in VectorXs dx,
-        in VectorXs dv, in double dt)
+        ref TripletXs damping, ref Vectors Phi,
+        ref Vectors Phiv, in Vectors dx,
+        in Vectors dv, in double dt)
     {
         int nf = m_hair_internal_forces.Count;
 
-        VectorXs local_lambda = lambda;
-        VectorXs local_lambda_v = lambda_v;
+        Vectors local_lambda = lambda;
+        Vectors local_lambda_v = lambda_v;
         TripletXs local_J = J;
         TripletXs local_Jv = Jv;
         TripletXs local_Jxv = Jxv;
         TripletXs local_tildeK = tildeK;
         TripletXs local_stiffness = stiffness;
         TripletXs local_damping = damping;
-        VectorXs local_Phi = Phi;
-        VectorXs local_Phiv = Phiv;
-        VectorXs local_dx = dx;
-        VectorXs local_dv = dv;
+        Vectors local_Phi = Phi;
+        Vectors local_Phiv = Phiv;
+        Vectors local_dx = dx;
+        Vectors local_dv = dv;
         double local_dt = dt;
 
         if (dx.size() == 0)
@@ -949,8 +949,8 @@ public class TwoDScene
         }
         else
         {
-            VectorXs nx = m_x + dx;
-            VectorXs nv = m_v + dv;
+            Vectors nx = m_x + dx;
+            Vectors nv = m_v + dv;
 
             Parallel.For(0, nf, (i) => {
                 foreach (Force f in m_hair_internal_forces[i])
@@ -987,7 +987,7 @@ public class TwoDScene
         Phi = local_Phi;
     }
 
-    public VectorXs getInterpolatedM()
+    public Vectors getInterpolatedM()
     {
         return m_interpolated_m;
     }
@@ -1002,8 +1002,8 @@ public class TwoDScene
         return m_particle_to_hairs;
     }
 
-    public void accumulateExternalGradU(ref VectorXs F, in VectorXs dx,
-        in VectorXs dv)
+    public void accumulateExternalGradU(ref Vectors F, in Vectors dx,
+        in Vectors dv)
     {
         if (dx.size() == 0)
         {
@@ -1021,17 +1021,17 @@ public class TwoDScene
         }
     }
 
-    public void storeLambda(in VectorXs lambda, in VectorXs lambda_v)
+    public void storeLambda(in Vectors lambda, in Vectors lambda_v)
     {
-        VectorXs lambda_ = lambda;
-        VectorXs lambda_v_ = lambda_v;
+        Vectors lambda_ = lambda;
+        Vectors lambda_v_ = lambda_v;
         int nf = m_internal_forces.Count;
         Parallel.For(0, nf, i => { 
             m_internal_forces[i].storeLambda(lambda_, lambda_v_);
         });
     }
 
-    public void preComputeInterhair(in VectorXs dx, in VectorXs dv, in double dt)
+    public void preComputeInterhair(in Vectors dx, in Vectors dv, in double dt)
     {
         int nf = m_inter_hair_forces.Count;
         if (dx.size() == 0)
@@ -1050,8 +1050,8 @@ public class TwoDScene
         }
         else
         {
-            VectorXs nx = m_x + dx;
-            VectorXs nv = m_v + dv;
+            Vectors nx = m_x + dx;
+            Vectors nv = m_v + dv;
             double local_dt = dt;
             Parallel.For(0, nf, i => {
                 if (!m_inter_hair_forces[i].isPrecomputationParallelized())
@@ -1105,9 +1105,9 @@ public class TwoDScene
     }
 
     public void interhairPostPreprocess(
-        VectorXs lambda, VectorXs lambda_v, TripletXs J, TripletXs Jv,
+        Vectors lambda, Vectors lambda_v, TripletXs J, TripletXs Jv,
         TripletXs Jxv, TripletXs tildeK, TripletXs stiffness, TripletXs damping,
-        VectorXs Phi, VectorXs Phiv, VectorXs dx, VectorXs dv,
+        Vectors Phi, Vectors Phiv, Vectors dx, Vectors dv,
         double dt)
     {
         int nf = m_inter_hair_forces.Count;
@@ -1132,8 +1132,8 @@ public class TwoDScene
         }
         else
         {
-            VectorXs nx = m_x + dx;
-            VectorXs nv = m_v + dv;
+            Vectors nx = m_x + dx;
+            Vectors nv = m_v + dv;
             // for unparallelized forces
             Parallel.For(0, nf, i => {
                 if (!m_inter_hair_forces[i].isParallelized())
@@ -1158,7 +1158,7 @@ public class TwoDScene
         m_flows.Add(flow);
     }
 
-    public VectorXs getHairRestMass()
+    public Vectors getHairRestMass()
     {
         return m_rest_m;
     }
@@ -1185,7 +1185,7 @@ public class TwoDScene
             {
                 m_internal_forces.Add(m_forces[i]);
 
-                if (!m_forces[i].isInterHair(new VectorXs(0), new VectorXs(0)))
+                if (!m_forces[i].isInterHair(new Vectors(0), new Vectors(0)))
                 {
                     int hidx = m_forces[i].getAffectedHair(m_particle_to_hairs);
                     if (hidx < 0)
