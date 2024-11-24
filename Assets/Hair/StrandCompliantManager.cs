@@ -28,34 +28,34 @@ public class StrandCompliantManager : SceneStepper
     protected SparseXs m_Jv_interhair;
     protected SparseXs m_JT_interhair;
     protected SparseXs m_JvT_interhair;
-    protected VectorXs m_invC_interhair;
-    protected VectorXs m_invCv_interhair;
+    protected Vectors m_invC_interhair;
+    protected Vectors m_invCv_interhair;
 
-    public VectorXs m_lambda;
-    public VectorXs m_lambda_v;
-    public VectorXs m_gradU;
-    public VectorXs m_Phi;
-    protected VectorXs m_Phi_interhair;
-    public VectorXs m_Phi_v;
-    protected VectorXs m_Phiv_interhair;
-    protected VectorXs m_vplus;
+    public Vectors m_lambda;
+    public Vectors m_lambda_v;
+    public Vectors m_gradU;
+    public Vectors m_Phi;
+    protected Vectors m_Phi_interhair;
+    public Vectors m_Phi_v;
+    protected Vectors m_Phiv_interhair;
+    protected Vectors m_vplus;
 
-    protected VectorXs m_dvi;
-    protected VectorXs m_dxi;
-    protected VectorXs m_dv;
-    protected VectorXs m_dx;
-    protected VectorXs m_dx_scripted;
+    protected Vectors m_dvi;
+    protected Vectors m_dxi;
+    protected Vectors m_dv;
+    protected Vectors m_dx;
+    protected Vectors m_dx_scripted;
 
-    protected VectorXs m_v;
-    protected VectorXs m_r;
-    protected VectorXs m_p;
-    protected VectorXs m_q;
-    protected VectorXs m_t;
-    protected VectorXs m_z;
-    protected VectorXs m_rhs;
+    protected Vectors m_v;
+    protected Vectors m_r;
+    protected Vectors m_p;
+    protected Vectors m_q;
+    protected Vectors m_t;
+    protected Vectors m_z;
+    protected Vectors m_rhs;
 
-    protected VectorXs m_cv_buffer;
-    protected VectorXs m_c_buffer;
+    protected Vectors m_cv_buffer;
+    protected Vectors m_c_buffer;
 
     protected VectorXi m_interhair_idx;
     protected VectorXi m_interhair_num;
@@ -90,21 +90,21 @@ public class StrandCompliantManager : SceneStepper
         m_dt = 0.0;
 
         int ndof = scene.getNumDofs();
-        m_gradU = new VectorXs(ndof);
-        m_r = new VectorXs(ndof);
-        m_v = new VectorXs(ndof);
-        m_p = new VectorXs(ndof);
-        m_q = new VectorXs(ndof);
-        m_t = new VectorXs(ndof);
-        m_z = new VectorXs(ndof);
-        m_rhs = new VectorXs(ndof);
-        m_vplus = new VectorXs(ndof);
+        m_gradU = new Vectors(ndof);
+        m_r = new Vectors(ndof);
+        m_v = new Vectors(ndof);
+        m_p = new Vectors(ndof);
+        m_q = new Vectors(ndof);
+        m_t = new Vectors(ndof);
+        m_z = new Vectors(ndof);
+        m_rhs = new Vectors(ndof);
+        m_vplus = new Vectors(ndof);
 
-        m_dv = new VectorXs(ndof);
-        m_dx = new VectorXs(ndof);
-        m_dvi = new VectorXs(ndof);
-        m_dxi = new VectorXs(ndof);
-        m_dx_scripted = new VectorXs(ndof);
+        m_dv = new Vectors(ndof);
+        m_dx = new Vectors(ndof);
+        m_dvi = new Vectors(ndof);
+        m_dxi = new Vectors(ndof);
+        m_dx_scripted = new Vectors(ndof);
 
         m_timing_statistics = new List<double>(6);
         for (int i = 0; i < 6; i++)
@@ -129,8 +129,8 @@ public class StrandCompliantManager : SceneStepper
         m_dt = dt;
         m_scene = scene;
 
-        VectorXs x = scene.getX();
-        VectorXs v = scene.getV();
+        Vectors x = scene.getX();
+        Vectors v = scene.getV();
 
         m_dx = v * dt;
         m_dv.setZero();
@@ -381,7 +381,7 @@ public class StrandCompliantManager : SceneStepper
         return true;
     }
 
-    public void localUpdateNumConstraints(in VectorXs dx, in VectorXs dv, double dt)
+    public void localUpdateNumConstraints(in Vectors dx, in Vectors dv, double dt)
     {
         int num_pos = 0;
         int num_vel = 0;
@@ -392,16 +392,16 @@ public class StrandCompliantManager : SceneStepper
         m_scene.updateNumConstraintsLocal(ref num_pos, ref num_vel, ref num_J, ref num_Jv, ref num_Jxv,
                                            ref num_tildeK);
 
-        m_lambda = new VectorXs(num_pos);
-        m_lambda_v = new VectorXs(num_vel);
+        m_lambda = new Vectors(num_pos);
+        m_lambda_v = new Vectors(num_vel);
         m_A_nz = new TripletXs(num_tildeK);
         m_J_nz = new TripletXs(num_J);
         m_Jv_nz = new TripletXs(num_Jv);
         m_Jxv_nz = new TripletXs(num_Jxv);
         m_invC_nz = new TripletXs(num_pos);
         m_invCv_nz = new TripletXs(num_vel);
-        m_Phi = new VectorXs(num_pos);
-        m_Phi_v = new VectorXs(num_vel);
+        m_Phi = new Vectors(num_pos);
+        m_Phi_v = new Vectors(num_vel);
 
         m_scene.localPostPreprocess(ref m_lambda, ref m_lambda_v, ref m_J_nz, ref m_Jv_nz, ref m_Jxv_nz,
                                      ref m_A_nz, ref m_invC_nz, ref m_invCv_nz, ref m_Phi, ref m_Phi_v,
@@ -420,14 +420,14 @@ public class StrandCompliantManager : SceneStepper
         scene = local_scene;
     }
 
-    public void computeRHSLocal(ref TwoDScene scene, double dt, ref VectorXs b)
+    public void computeRHSLocal(ref TwoDScene scene, double dt, ref Vectors b)
     {
         m_gradU.setZero();
-        scene.accumulateExternalGradU(ref m_gradU, new VectorXs(0), new VectorXs(0));
+        scene.accumulateExternalGradU(ref m_gradU, new Vectors(0), new Vectors(0));
         zeroFixedDoFs(scene, ref m_gradU);
 
         TwoDScene local_scene = scene;
-        VectorXs local_b = b;
+        Vectors local_b = b;
         // compute local b
         int nhairs = m_integrators.Count;
         Parallel.For(0, nhairs, hidx => {
@@ -438,7 +438,7 @@ public class StrandCompliantManager : SceneStepper
         b = local_b;
     }
 
-    public void zeroFixedDoFs(in TwoDScene scene, ref VectorXs vec)
+    public void zeroFixedDoFs(in TwoDScene scene, ref Vectors vec)
     {
         int nprts = scene.getNumParticles();
         for (int i = 0; i < nprts; ++i)
@@ -451,7 +451,7 @@ public class StrandCompliantManager : SceneStepper
         }
     }
 
-    public void localPreconditionScene(TwoDScene scene, double dt, VectorXs r, VectorXs b)
+    public void localPreconditionScene(TwoDScene scene, double dt, Vectors r, Vectors b)
     {
         double t0 = Time.realtimeSinceStartup;
         int nhairs = m_integrators.Count;
@@ -464,13 +464,13 @@ public class StrandCompliantManager : SceneStepper
     }
 
     public void localStepScene(ref TwoDScene scene,
-                                                 double dt, ref VectorXs r,
-                                                 in VectorXs b) {
+                                                 double dt, ref Vectors r,
+                                                 in Vectors b) {
         double t0 = Time.realtimeSinceStartup;
         int nhairs = m_integrators.Count;
         TwoDScene local_scene = scene;
-        VectorXs local_r = r;
-        VectorXs local_b = b;
+        Vectors local_r = r;
+        Vectors local_b = b;
 
         Parallel.For(0, nhairs, hidx => {
             m_integrators[hidx].stepScene(ref local_scene, dt, ref local_r, local_b);
@@ -484,30 +484,30 @@ public class StrandCompliantManager : SceneStepper
     }
 
     public void localUpdateLambda(ref TwoDScene scene,
-                                                    in VectorXs dx,
-                                                    in VectorXs dv,
+                                                    in Vectors dx,
+                                                    in Vectors dv,
                                                     double dt)
     {
         TwoDScene local_scene = scene;
-        VectorXs local_dx = dx;
-        VectorXs local_dv = dv;
+        Vectors local_dx = dx;
+        Vectors local_dv = dv;
         int nhairs = m_integrators.Count;
         Parallel.For(0, nhairs, hidx => {
             m_integrators[hidx].updateLambda(ref local_scene, local_dx, local_dv, dt);
         });
     }
 
-    public void updateNextV(ref TwoDScene scene, in VectorXs vplus)
+    public void updateNextV(ref TwoDScene scene, in Vectors vplus)
     {
         int nhairs = m_integrators.Count;
         TwoDScene local_scene = scene;
-        VectorXs local_vplus = vplus;
+        Vectors local_vplus = vplus;
         Parallel.For(0, nhairs, hidx => {
             m_integrators[hidx].updateNextV(ref local_scene, local_vplus);
         });
     }
 
-    public void interhairUpdateNumConstraints(in VectorXs dx, in VectorXs dv, double dt)
+    public void interhairUpdateNumConstraints(in Vectors dx, in Vectors dv, double dt)
     {
         int num_pos = 0;
         int num_vel = 0;
@@ -534,8 +534,8 @@ public class StrandCompliantManager : SceneStepper
                                          m_Jxv_nz, m_A_nz, m_invC_nz, m_invCv_nz,
                                          m_Phi, m_Phi_v, dx, dv, dt);
 
-        m_c_buffer = new VectorXs(m_interhair_num[0]);
-        m_cv_buffer = new VectorXs(m_interhair_num[1]);
+        m_c_buffer = new Vectors(m_interhair_num[0]);
+        m_cv_buffer = new Vectors(m_interhair_num[1]);
 
         int ndof = m_scene.getNumDofs();
 
@@ -565,21 +565,21 @@ public class StrandCompliantManager : SceneStepper
         //m_Jv_interhair.makeCompressed();
         //m_JvT_interhair.makeCompressed();
 
-        m_invC_interhair = new VectorXs(m_interhair_num[0]);
+        m_invC_interhair = new Vectors(m_interhair_num[0]);
         Parallel.For(0, m_interhair_num[0], i => {
             m_invC_interhair[i] = m_invC_nz[i + m_interhair_idx[0]].getvalue();
         });
 
-        m_invCv_interhair = new VectorXs(m_interhair_num[1]);
+        m_invCv_interhair = new Vectors(m_interhair_num[1]);
         Parallel.For(0, m_interhair_num[1], i => {
             m_invCv_interhair[i] = m_invCv_nz[i + m_interhair_idx[1]].getvalue();
         });
 
-        m_Phi_interhair = m_Phi.segment(m_interhair_idx[0], m_interhair_num[0]).ToVectorXs();
-        m_Phiv_interhair = m_Phi_v.segment(m_interhair_idx[1], m_interhair_num[1]).ToVectorXs();
+        m_Phi_interhair = m_Phi.segment(m_interhair_idx[0], m_interhair_num[0]);
+        m_Phiv_interhair = m_Phi_v.segment(m_interhair_idx[1], m_interhair_num[1]);
     }
 
-    public void computeRHSIncrementalInterhair(TwoDScene scene, double dt, VectorXs b, VectorXs vplus)
+    public void computeRHSIncrementalInterhair(TwoDScene scene, double dt, Vectors b, Vectors vplus)
     {
         if (m_interhair_num[0] > 0)
         {
@@ -596,7 +596,7 @@ public class StrandCompliantManager : SceneStepper
         }
     }
 
-    public void computeAp(TwoDScene scene, VectorXs p, VectorXs b, double dt)
+    public void computeAp(TwoDScene scene, Vectors p, Vectors b, double dt)
     {
         double t0 = Time.realtimeSinceStartup;
 

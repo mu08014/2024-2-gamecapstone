@@ -6,30 +6,30 @@ public class SceneStepper
 {
     protected List<double> m_timing_statistics;
 
-    protected VectorXs m_old_v;
-    protected VectorXs m_a;
-    protected VectorXs m_next_x;
+    protected Vectors m_old_v;
+    protected Vectors m_a;
+    protected Vectors m_next_x;
 
     protected int DIM;
 
     public SceneStepper(int dim = 3)
     {
         m_timing_statistics = new List<double>();
-        m_old_v = new VectorXs();
-        m_a = new VectorXs();
-        m_next_x = new VectorXs();
+        m_old_v = new Vectors();
+        m_a = new Vectors();
+        m_next_x = new Vectors();
         DIM = dim;
     }
 
-    public VectorXs getAcceleration()
+    public Vectors getAcceleration()
     {
         return m_a;
     }
 
     public virtual void accept(ref TwoDScene scene, double dt)
     {
-        VectorXs x = scene.getX();
-        VectorXs v = scene.getV();
+        Vectors x = scene.getX();
+        Vectors v = scene.getV();
 
         for (int i = 0; i < v.Size; i++)
         {
@@ -45,12 +45,12 @@ public class SceneStepper
         m_old_v = v.Clone();
     }
 
-    public void setNextX(in VectorXs nextx)
+    public void setNextX(in Vectors nextx)
     {
         m_next_x = nextx.Clone();
     }
 
-    public VectorXs getNextX()
+    public Vectors getNextX()
     {
         return m_next_x;
     }

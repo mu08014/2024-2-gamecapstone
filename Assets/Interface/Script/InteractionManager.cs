@@ -1,13 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography;
 using System.Threading.Tasks;
-using TMPro.EditorUtilities;
 using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.Assertions;
 
 public class InteractionManager : MonoBehaviour
 {
@@ -194,7 +190,7 @@ public class InteractionManager : MonoBehaviour
             dofVars.conservativeResize(numparticles * 4 - numstrands);
             dofVerts.conservativeResize(numparticles * 4 - numstrands);
             libwethairScene.setVertToDoFMap(vert_to_dof, dofVars, tipVerts, dofVerts);
-            List<VectorXs> particle_pos = new List<VectorXs>();
+            List<Vectors> particle_pos = new List<Vectors>();
             int vtx = 0;
             int edx = 0;
             int paramsIndex = 0;
@@ -220,7 +216,7 @@ public class InteractionManager : MonoBehaviour
                     bool isSource = false;
                     particle_state.Add(isSource);
                     libwethairScene.setPosition(vtx, HairComponents[i].m_hair_x[j]);
-                    particle_pos.Add(HairComponents[i].m_hair_x[j].ToVectorXs());
+                    particle_pos.Add(HairComponents[i].m_hair_x[j]);
 
                     libwethairScene.setVelocity(vtx, HairComponents[i].m_hair_v[j]);
                     libwethairScene.setFixed(vtx, HairComponents[i].m_hair_fixed[j]);
@@ -277,7 +273,7 @@ public class InteractionManager : MonoBehaviour
             Parallel.For(0, particle_indices_vec.Count, p => {
                 libwethairScene.getFilmFlows()[p] = new CylindricalShallowFlow(
                 ref libwethairScene, particle_indices_vec[p],
-                new VectorXs(particle_eta_vec[p], 0,
+                new Vectors(particle_eta_vec[p], 0,
                                      particle_eta_vec[p].Count),
                 particle_state_vec[p]);
             });

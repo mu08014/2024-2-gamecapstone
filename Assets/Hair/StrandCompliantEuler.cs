@@ -33,7 +33,7 @@ public class StrandCompliantEuler
     private SparseXs m_invC_inter;
     private SparseXs m_invCv_inter;
 
-    private VectorXs m_A_inv_diag;
+    private Vectors m_A_inv_diag;
 
     SimplicialLDLT m_solver = new SimplicialLDLT();
 
@@ -62,38 +62,38 @@ public class StrandCompliantEuler
         m_start_global_dof = m_parent.m_scene.getDof(flow.getParticleIndices()[0]);
     }
 
-    public void computeRHS(ref TwoDScene scene, double dt, ref VectorXs b)
+    public void computeRHS(ref TwoDScene scene, double dt, ref Vectors b)
     {
-        VectorXs v = scene.getV().segment(m_start_global_dof, m_num_global_dof).ToVectorXs();
+        Vectors v = scene.getV().segment(m_start_global_dof, m_num_global_dof);
         HairFlow flow = m_parent.m_scene.getFilmFlows()[m_hidx];
-        VectorXs m = scene.getInterpolatedM().segment(m_start_global_dof, m_num_global_dof).ToVectorXs();
-        VectorXs gradu = m_parent.m_gradU.segment(m_start_global_dof, m_num_global_dof).ToVectorXs();
+        Vectors m = scene.getInterpolatedM().segment(m_start_global_dof, m_num_global_dof);
+        Vectors gradu = m_parent.m_gradU.segment(m_start_global_dof, m_num_global_dof);
         VectorXi constraint_idx = flow.getConstraintIdx();
         VectorXi constraint_num = flow.getNumConstraints();
 
-        VectorXs phi = m_parent.m_Phi.segment(constraint_idx[0], constraint_num[0]).ToVectorXs();
+        Vectors phi = m_parent.m_Phi.segment(constraint_idx[0], constraint_num[0]);
 
         b.SetSegment(m_start_global_dof, m_num_global_dof,
             v.cwiseProduct(m) - gradu * dt - dt * (m_J.transpose() * (m_invC * phi)));
 
         if (constraint_num[1] > 0)
         {
-            VectorXs phi_v =
-                m_parent.m_Phi_v.segment(constraint_idx[1], constraint_num[1]).ToVectorXs();
+            Vectors phi_v =
+                m_parent.m_Phi_v.segment(constraint_idx[1], constraint_num[1]);
             b.PlusSegment(m_start_global_dof, m_num_global_dof,
                 -dt * (m_Jv.transpose() * (m_invCv * (phi_v - m_Jv * v))));
         }
     }
 
-    public bool stepScene(ref TwoDScene scene, double dt, ref VectorXs r, in VectorXs b)
+    public bool stepScene(ref TwoDScene scene, double dt, ref Vectors r, in Vectors b)
     {
-        VectorXs rr = b.segment(m_start_global_dof, m_num_global_dof).ToVectorXs();
+        Vectors rr = b.segment(m_start_global_dof, m_num_global_dof);
         r.SetSegment(m_start_global_dof, m_num_global_dof,
             m_solver.solve(rr));  // m_A_diag.cwiseProduct(rr);
         return true;
     }
 
-    public void updateLambda(ref TwoDScene scene, in VectorXs dx, in VectorXs dv, double dt)
+    public void updateLambda(ref TwoDScene scene, in Vectors dx, in Vectors dv, double dt)
     {
         HairFlow flow = scene.getFilmFlows()[m_hidx];
         List<int> particles = flow.getParticleIndices();
@@ -101,45 +101,45 @@ public class StrandCompliantEuler
         VectorXi constraint_idx = flow.getConstraintIdx();
         VectorXi constraint_num = flow.getNumConstraints();
 
-        VectorXs phi =
-            m_parent.m_Phi.segment(constraint_idx[0], constraint_num[0]).ToVectorXs();
+        Vectors phi =
+            m_parent.m_Phi.segment(constraint_idx[0], constraint_num[0]);
 
-        VectorXs ddx = dx.segment(m_start_global_dof, m_num_global_dof).ToVectorXs();
-        VectorXs ddv = dv.segment(m_start_global_dof, m_num_global_dof).ToVectorXs();
+        Vectors ddx = dx.segment(m_start_global_dof, m_num_global_dof);
+        Vectors ddv = dv.segment(m_start_global_dof, m_num_global_dof);
 
         m_parent.m_lambda.SetSegment(constraint_idx[0], constraint_num[0],
             (-1) * m_invC * (m_J * ddx + phi));
         if (constraint_num[1] > 0)
         {
-            VectorXs phi_v =
-                m_parent.m_Phi_v.segment(constraint_idx[1], constraint_num[1]).ToVectorXs();
+            Vectors phi_v =
+                m_parent.m_Phi_v.segment(constraint_idx[1], constraint_num[1]);
             m_parent.m_lambda_v.SetSegment(constraint_idx[1], constraint_num[1],
                 (-1) * m_invCv * (m_Jxv * ddx + m_Jv * ddv + phi_v));
         }
     }
 
-    public void computeRHSIncremental(ref TwoDScene scene, double dt, ref VectorXs b, in VectorXs vplus)
+    public void computeRHSIncremental(ref TwoDScene scene, double dt, ref Vectors b, in Vectors vplus)
     {
-        VectorXs dv = (vplus.segment(m_start_global_dof, m_num_global_dof) -
-                scene.getV().segment(m_start_global_dof, m_num_global_dof)).ToVectorXs();
+        Vectors dv = (vplus.segment(m_start_global_dof, m_num_global_dof) -
+                scene.getV().segment(m_start_global_dof, m_num_global_dof));
         HairFlow flow = m_parent.m_scene.getFilmFlows()[m_hidx];
-        VectorXs m =
-            scene.getInterpolatedM().segment(m_start_global_dof, m_num_global_dof).ToVectorXs();
-        VectorXs gradu =
-            m_parent.m_gradU.segment(m_start_global_dof, m_num_global_dof).ToVectorXs();
+        Vectors m =
+            scene.getInterpolatedM().segment(m_start_global_dof, m_num_global_dof);
+        Vectors gradu =
+            m_parent.m_gradU.segment(m_start_global_dof, m_num_global_dof);
         VectorXi constraint_idx = flow.getConstraintIdx();
         VectorXi constraint_num = flow.getNumConstraints();
 
-        VectorXs phi =
-            m_parent.m_Phi.segment(constraint_idx[0], constraint_num[0]).ToVectorXs();
+        Vectors phi =
+            m_parent.m_Phi.segment(constraint_idx[0], constraint_num[0]);
 
         b.SetSegment(m_start_global_dof, m_num_global_dof,
             (-1) * dv.cwiseProduct(m) - gradu * dt -
             dt * (m_J.transpose() * (m_invC * phi)));
         if (constraint_num[1] > 0)
         {
-            VectorXs phi_v =
-                m_parent.m_Phi_v.segment(constraint_idx[1], constraint_num[1]).ToVectorXs();
+            Vectors phi_v =
+                m_parent.m_Phi_v.segment(constraint_idx[1], constraint_num[1]);
             b.PlusSegment(m_start_global_dof, m_num_global_dof,
                 -dt * (m_Jv.transpose() * (m_invCv * phi_v)));
         }
@@ -150,9 +150,9 @@ public class StrandCompliantEuler
         return false;
     }
 
-    public void updateNextV(ref TwoDScene scene, in VectorXs vplus)
+    public void updateNextV(ref TwoDScene scene, in Vectors vplus)
     {
-        VectorXs v_next = scene.getV();
+        Vectors v_next = scene.getV();
         HairFlow flow = scene.getFilmFlows()[m_hidx];
         List<int> particles = flow.getParticleIndices();
 
@@ -167,13 +167,13 @@ public class StrandCompliantEuler
         }
     }
 
-    public void computeAp(in VectorXs p, ref VectorXs b)
+    public void computeAp(in Vectors p, ref Vectors b)
     {
         b.SetSegment(m_start_global_dof, m_num_global_dof, 
             m_A * p.segment(m_start_global_dof, m_num_global_dof));
     }
 
-    public bool PreconditionScene(ref TwoDScene scene, double dt, ref VectorXs r, in VectorXs b)
+    public bool PreconditionScene(ref TwoDScene scene, double dt, ref Vectors r, in Vectors b)
     {
         if (m_parent.m_use_preconditioner)
         {
@@ -181,7 +181,7 @@ public class StrandCompliantEuler
         }
         else
         {
-            VectorXs rr = b.segment(m_start_global_dof, m_num_global_dof).ToVectorXs();
+            Vectors rr = b.segment(m_start_global_dof, m_num_global_dof);
             r.SetSegment(m_start_global_dof, m_num_global_dof,
                 m_A_inv_diag.cwiseProduct(rr));
             return true;
@@ -194,7 +194,7 @@ public class StrandCompliantEuler
         //	compute an A matrix (localized version of compute Integration vars),
         HairFlow flow = m_parent.m_scene.getFilmFlows()[m_hidx];
         int ndof = scene.isMassSpring() ? flow.size() * DIM : flow.size() * 4 - 1;
-        VectorXs m = scene.getInterpolatedM();
+        Vectors m = scene.getInterpolatedM();
         VectorXi constraint_idx = flow.getConstraintIdx();
         VectorXi constraint_num = flow.getNumConstraints();
         List<int> global_local =
@@ -382,14 +382,14 @@ public class SimplicialLDLT
 
             for (int j = i + 1; j < n; j++)
             {
-                if (matrix.GetValue(j, i) != 0) // 비어 있지 않은 요소에 대해서만 계산
+                if (matrix.GetValue(j, i) != 0)
                 {
                     sum = matrix.GetValue(j, i);
                     for (int k = 0; k < i; k++)
                     {
                         sum -= L.GetValue(j, k) * L.GetValue(i, k) * (D.ContainsKey(k) ? D[k] : 0);
                     }
-                    if (D[i] != 0) // D[i]가 0이 아닌지 확인하여 나누기 오류 방지
+                    if (D[i] != 0)
                         L.insert(j, i, sum / D[i]);
                 }
             }
@@ -397,7 +397,7 @@ public class SimplicialLDLT
         }
     }
 
-    public Vectors solve(VectorXs v)
+    public Vectors solve(Vectors v)
     {
         int n = v.Size;
         double[] y = new double[n];

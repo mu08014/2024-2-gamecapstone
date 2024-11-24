@@ -29,7 +29,7 @@ public class LinearSpringForce : Force
         m_lambda_v = new Vectors(dim);
     }
 
-    public override void preCompute(in VectorXs x, in VectorXs v, in VectorXs m, in double dt)
+    public override void preCompute(in Vectors x, in Vectors v, in Vectors m, in double dt)
     {
         m_D = (x.segment(m_scene.getDof(m_endpoints.Item1), DIM) - 
             x.segment(m_scene.getDof(m_endpoints.Item2), DIM))
@@ -37,7 +37,7 @@ public class LinearSpringForce : Force
             m_l0;
     }
 
-    public override void computeIntegrationVars(in VectorXs x, in VectorXs v, in VectorXs m, ref VectorXs lambda, ref VectorXs lambda_v, ref TripletXs J, ref TripletXs Jv, ref TripletXs Jxv, ref TripletXs tildeK, ref TripletXs stiffness, ref TripletXs damping, ref VectorXs Phi, ref VectorXs Phiv, in double dt)
+    public override void computeIntegrationVars(in Vectors x, in Vectors v, in Vectors m, ref Vectors lambda, ref Vectors lambda_v, ref TripletXs J, ref TripletXs Jv, ref TripletXs Jxv, ref TripletXs tildeK, ref TripletXs stiffness, ref TripletXs damping, ref Vectors Phi, ref Vectors Phiv, in double dt)
     {
         Phi.SetSegment(m_internal_index_pos, DIM,
             x.segment(m_scene.getDof(m_endpoints.Item1), DIM) -
@@ -156,7 +156,7 @@ public class LinearSpringForce : Force
 
     public override bool isPrecomputationParallelized() { return false; }
 
-    public override void storeLambda(in VectorXs lambda, in VectorXs lamda_v)
+    public override void storeLambda(in Vectors lambda, in Vectors lamda_v)
     {
         m_lambda = lambda.segment(m_internal_index_pos, DIM);
         if (m_b > 0.0)

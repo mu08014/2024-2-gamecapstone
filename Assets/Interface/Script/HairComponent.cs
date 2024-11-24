@@ -2,14 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
-using Unity.VisualScripting.Antlr3.Runtime.Tree;
-using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.UIElements;
-using static UnityEngine.ParticleSystem;
 
 [ExecuteAlways]
 public class HairComponent : MonoBehaviour {
@@ -172,9 +166,9 @@ public class HairComponent : MonoBehaviour {
                     if (m_hair_fixed[j])
                     {
                                            ////////////////////////////////////////////////////////////속도 초기값 
-                        m_hair_v[j][0] = 0.01f;
-                        m_hair_v[j][1] = 0.01f;
-                        m_hair_v[j][2] = 0.01f;
+                        m_hair_v[j][0] = 0.00f;
+                        m_hair_v[j][1] = 0.05f;
+                        m_hair_v[j][2] = 0.00f;
                     }
                 }
                 Debug.Log("Number of Fixed Particle is " + numofStrands);

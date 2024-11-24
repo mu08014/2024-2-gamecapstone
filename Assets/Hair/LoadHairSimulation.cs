@@ -106,9 +106,9 @@ public class LoadHairSimulation
         dofVars.conservativeResize(numparticles * 4 - numstrands);
         dofVerts.conservativeResize(numparticles * 4 - numstrands);
         scene.setVertToDoFMap(vert_to_dof, dofVars, tipVerts, dofVerts);
-        List<VectorXs> particle_pos = new List<VectorXs>();
-        VectorXs pos = new VectorXs(3);
-        VectorXs vel = new VectorXs(3);
+        List<Vectors> particle_pos = new List<Vectors>();
+        Vectors pos = new Vectors(3);
+        Vectors vel = new Vectors(3);
         int vtx = 0;
         int edx = 0;
         int paramsIndex = 0;
@@ -136,13 +136,13 @@ public class LoadHairSimulation
                 pos[1] = hairparticle.GetComponent<HairParticleTestMode>().Position.y;
                 pos[2] = hairparticle.GetComponent<HairParticleTestMode>().Position.z;
 
-                scene.setPosition(vtx, pos.ToVectors());
+                scene.setPosition(vtx, pos);
                 particle_pos.Add(pos);
 
                 vel[0] = hairparticle.GetComponent<HairParticleTestMode>().Velocity.x;
                 vel[1] = hairparticle.GetComponent<HairParticleTestMode>().Velocity.y;
                 vel[2] = hairparticle.GetComponent<HairParticleTestMode>().Velocity.z;
-                scene.setVelocity(vtx, vel.ToVectors());
+                scene.setVelocity(vtx, vel);
 
                 bool fixe = false;
                 fixe = hairparticle.GetComponent<HairParticleTestMode>().Fix;
@@ -180,7 +180,7 @@ public class LoadHairSimulation
         Parallel.For(0, particle_indices_vec.Count, p => {
             scene.getFilmFlows()[p] = new CylindricalShallowFlow(
             ref scene, particle_indices_vec[p],
-            new VectorXs(particle_eta_vec[p], 0,
+            new Vectors(particle_eta_vec[p], 0,
                                  particle_eta_vec[p].Count),
             particle_state_vec[p]);
         });

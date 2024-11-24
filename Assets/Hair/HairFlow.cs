@@ -31,7 +31,7 @@ struct HairPlaneIntersection
     double alpha;
     double pos_y;
     double porosity;
-    VectorXs jac;
+    Vectors jac;
     MatrixXs hess;
 };
 
@@ -50,22 +50,22 @@ public abstract class HairFlow
     protected List<List<int>> m_particle_to_edges = new List<List<int>>();
     protected Dictionary<int, int> m_global_to_local = new Dictionary<int, int>();
 
-    protected VectorXs m_liquid_phi;
-    protected VectorXs m_porosity;
-    protected VectorXs m_eta;
-    protected VectorXs m_avg_eta;
-    protected VectorXs m_edge_eta;
-    protected VectorXs m_u;
-    protected VectorXs m_stored_friction_coeff;
+    protected Vectors m_liquid_phi;
+    protected Vectors m_porosity;
+    protected Vectors m_eta;
+    protected Vectors m_avg_eta;
+    protected Vectors m_edge_eta;
+    protected Vectors m_u;
+    protected Vectors m_stored_friction_coeff;
 
     protected MatrixXs m_accel_v;
-    protected VectorXs m_area_v;
-    protected VectorXs m_area_v_hair;
-    protected VectorXs m_area_e;
-    protected VectorXs m_normal_e;
-    protected VectorXs m_normal_v;
-    protected VectorXs m_rad_vec;
-    protected VectorXs m_edge_rad_vec;
+    protected Vectors m_area_v;
+    protected Vectors m_area_v_hair;
+    protected Vectors m_area_e;
+    protected Vectors m_normal_e;
+    protected Vectors m_normal_v;
+    protected Vectors m_rad_vec;
+    protected Vectors m_edge_rad_vec;
     protected MatrixXs m_dir_v;
     protected MatrixXs m_dir_f;
 
@@ -100,17 +100,17 @@ public abstract class HairFlow
         STAR
     }
 
-    public HairFlow(ref TwoDScene parent, in List<int> involved_particles, in VectorXs eta, in List<bool> particle_state, int dim)
+    public HairFlow(ref TwoDScene parent, in List<int> involved_particles, in Vectors eta, in List<bool> particle_state, int dim)
     {
         m_parent = parent;
         m_particle_indices = involved_particles;
         m_eta = eta;
         m_particle_state = particle_state;
         m_flow_index = m_flow_index + 1;
-        m_porosity = new VectorXs(m_eta.size());
-        m_liquid_phi = new VectorXs(m_eta.size());
+        m_porosity = new Vectors(m_eta.size());
+        m_liquid_phi = new Vectors(m_eta.size());
 
-        VectorXs radii = m_parent.getRadii();
+        Vectors radii = m_parent.getRadii();
 
         int np = m_porosity.size();
         for (int i = 0; i < np; i++)
@@ -124,7 +124,7 @@ public abstract class HairFlow
         DIM = dim;
     }
 
-    public VectorXs getVelocity()
+    public Vectors getVelocity()
     {
         return m_u;
     }
@@ -163,12 +163,12 @@ public abstract class HairFlow
         return m_max_eta;
     }
 
-    public virtual VectorXs getEta()
+    public virtual Vectors getEta()
     {
         return m_eta;
     }
 
-    public virtual VectorXs getAvgEta()
+    public virtual Vectors getAvgEta()
     {
         return m_avg_eta;
     }
@@ -178,17 +178,17 @@ public abstract class HairFlow
         return m_actual_u_v;
     }
 
-    public virtual VectorXs getPorosity()
+    public virtual Vectors getPorosity()
     {
         return m_porosity;
     }
 
-    public virtual VectorXs getAreaV()
+    public virtual Vectors getAreaV()
     {
         return m_area_v;
     }
 
-    public virtual VectorXs getAreaVHair()
+    public virtual Vectors getAreaVHair()
     {
         return m_area_v_hair;
     }
@@ -198,27 +198,27 @@ public abstract class HairFlow
         return m_accel_v;
     }
 
-    public virtual VectorXs getAreaE()
+    public virtual Vectors getAreaE()
     {
         return m_area_e;
     }
 
-    public virtual VectorXs getNormalV()
+    public virtual Vectors getNormalV()
     {
         return m_normal_v;
     }
 
-    public virtual VectorXs getRadiiV()
+    public virtual Vectors getRadiiV()
     {
         return m_rad_vec;
     }
 
-    public virtual VectorXs getRadiiE()
+    public virtual Vectors getRadiiE()
     {
         return m_edge_rad_vec;
     }
 
-    public virtual VectorXs getNormalE()
+    public virtual Vectors getNormalE()
     {
         return m_normal_e;
     }
@@ -275,19 +275,19 @@ public abstract class HairFlow
         return m_particle_indices;
     }
 
-    public abstract void updateGeometricState(in VectorXs x, in VectorXs v,
+    public abstract void updateGeometricState(in Vectors x, in Vectors v,
                                     ref FluidSim fluidsim);
 
-    public abstract void updateToFilteredGrid(in VectorXs x, in VectorXs v,
+    public abstract void updateToFilteredGrid(in Vectors x, in Vectors v,
                                     ref FluidSim fluidsim, in double dt,
                                     int ibuffer);
 
-    public abstract void updateFromFilteredGrid(in VectorXs x, ref VectorXs v,
+    public abstract void updateFromFilteredGrid(in Vectors x, ref Vectors v,
                                       ref FluidSim fluidsim, in double dt);
 
-    public abstract void advance(in VectorXs x, in double dt);
+    public abstract void advance(in Vectors x, in double dt);
 
-    public abstract void add_force(in VectorXs x, in VectorXs accel,
+    public abstract void add_force(in Vectors x, in Vectors accel,
                          ref FluidSim fluidsim, in double dt);
 
     public abstract void updateHairMass();
@@ -298,8 +298,8 @@ public abstract class HairFlow
 
     public abstract void postUpdateHairFlowHeight(in double dt);
 
-    public abstract void updateReservoir(ref FluidSim fluidsim, in VectorXs x,
-                               in VectorXs v, in double dt);
+    public abstract void updateReservoir(ref FluidSim fluidsim, in Vectors x,
+                               in Vectors v, in double dt);
 
     public virtual List<bool> getState()
     {
@@ -339,7 +339,7 @@ public abstract class HairFlow
         }
     }
 
-    public virtual Vectors computeHairLiquidMomentum(in VectorXs v)
+    public virtual Vectors computeHairLiquidMomentum(in Vectors v)
     {
         int ne = m_global_to_local.Count;
 
@@ -374,10 +374,10 @@ public abstract class HairFlow
         return momentum;
     }
 
-    public abstract VectorXs computeHairLiquidAngularMomentum(
-      in VectorXs x, in VectorXs v, ref FluidSim fluidsim);
+    public abstract Vectors computeHairLiquidAngularMomentum(
+      in Vectors x, in Vectors v, ref FluidSim fluidsim);
 
-    public virtual Vectors computeHairDragForce(in VectorXs v)
+    public virtual Vectors computeHairDragForce(in Vectors v)
     {
         int ne = m_global_edges.Count;
 
@@ -411,7 +411,7 @@ public abstract class HairFlow
         return momentum;
     }
 
-    public virtual double computeHairLiquidEnergy(in VectorXs v)
+    public virtual double computeHairLiquidEnergy(in Vectors v)
     {
         int ne = m_global_edges.Count;
 

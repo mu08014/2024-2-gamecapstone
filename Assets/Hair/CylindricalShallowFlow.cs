@@ -28,27 +28,27 @@ public class CylindricalShallowFlow : HairFlow
 
     protected MatrixXs m_accel_f;
 
-    protected VectorXs m_delta_sol;  // used by igl::active_set for result
-    protected VectorXs m_edge_x;
-    protected VectorXs m_area_e_accu;
-    protected VectorXs m_area_e_inv_mapping;
-    protected VectorXs m_uvert;
-    protected VectorXs m_ustar;
-    protected VectorXs m_accel_e;
-    protected VectorXs m_cap_e;
+    protected Vectors m_delta_sol;  // used by igl::active_set for result
+    protected Vectors m_edge_x;
+    protected Vectors m_area_e_accu;
+    protected Vectors m_area_e_inv_mapping;
+    protected Vectors m_uvert;
+    protected Vectors m_ustar;
+    protected Vectors m_accel_e;
+    protected Vectors m_cap_e;
     protected MatrixXs m_rhs;
     protected MatrixXs m_rhs_plus;
     protected MatrixXs m_sol;
-    protected VectorXs m_mass_v;
+    protected Vectors m_mass_v;
 
-    protected VectorXs m_porosity_e;
-    protected VectorXs m_pressure;
+    protected Vectors m_porosity_e;
+    protected Vectors m_pressure;
 
-    protected VectorXs m_old_eta;
-    protected VectorXs m_old_area_v;
-    protected VectorXs m_old_rad_vec;
+    protected Vectors m_old_eta;
+    protected Vectors m_old_area_v;
+    protected Vectors m_old_rad_vec;
 
-    protected VectorXs m_liquid_mass;
+    protected Vectors m_liquid_mass;
     //Eigen::SparseLU<SparseXs> m_solver;
 
     protected double m_sum_area_e;
@@ -56,7 +56,7 @@ public class CylindricalShallowFlow : HairFlow
 
     public CylindricalShallowFlow(
         ref TwoDScene parent, in List<int> involved_particles,
-        in VectorXs eta, in List<bool> particle_state) : base(ref parent, involved_particles, eta, particle_state, 3)
+        in Vectors eta, in List<bool> particle_state) : base(ref parent, involved_particles, eta, particle_state, 3)
     {
         int np = involved_particles.Count;
         for (int i = 0; i < np; ++i)
@@ -111,7 +111,7 @@ public class CylindricalShallowFlow : HairFlow
         m_pool_liquid = 0.0;
     }
 
-    private void compute_rest_porosity(in VectorXs eta, in VectorXs global_radii, in List<int> indices, ref VectorXs porosity)
+    private void compute_rest_porosity(in Vectors eta, in Vectors global_radii, in List<int> indices, ref Vectors porosity)
     {
         int np = eta.size();
         for (int i = 0; i < np; ++i)
@@ -121,7 +121,7 @@ public class CylindricalShallowFlow : HairFlow
         }
     }
 
-    private void compute_edge_val(in VectorXs vert_val, in List<Tuple<int, int>> edges, ref VectorXs edge_val)
+    private void compute_edge_val(in Vectors vert_val, in List<Tuple<int, int>> edges, ref Vectors edge_val)
     {
         int ne = edges.Count;
 
@@ -161,7 +161,7 @@ public class CylindricalShallowFlow : HairFlow
         sp1.setFromTriplets(tri);
     }
 
-    private void copy_rest_mass(VectorXs rest_mass, List<int> indices, VectorXs mass_v, TwoDScene parent)
+    private void copy_rest_mass(Vectors rest_mass, List<int> indices, Vectors mass_v, TwoDScene parent)
     {
         int np = mass_v.size();
 
@@ -171,17 +171,17 @@ public class CylindricalShallowFlow : HairFlow
         }
     }
 
-    public override void add_force(in VectorXs x, in VectorXs accel, ref FluidSim fluidsim, in double dt)
+    public override void add_force(in Vectors x, in Vectors accel, ref FluidSim fluidsim, in double dt)
     {
         throw new System.NotImplementedException();
     }
 
-    public override void advance(in VectorXs x, in double dt)
+    public override void advance(in Vectors x, in double dt)
     {
         throw new System.NotImplementedException();
     }
 
-    public override VectorXs computeHairLiquidAngularMomentum(in VectorXs x, in VectorXs v, ref FluidSim fluidsim)
+    public override Vectors computeHairLiquidAngularMomentum(in Vectors x, in Vectors v, ref FluidSim fluidsim)
     {
         throw new System.NotImplementedException();
     }
@@ -226,9 +226,9 @@ public class CylindricalShallowFlow : HairFlow
         int num_particles = m_particle_indices.Count;
         int num_edges = m_internal_edges.Count;
 
-        m_area_v = new VectorXs(num_particles);
-        m_area_v_hair = new VectorXs(num_particles);
-        m_area_e = new VectorXs(num_edges);
+        m_area_v = new Vectors(num_particles);
+        m_area_v_hair = new Vectors(num_particles);
+        m_area_e = new Vectors(num_edges);
 
         m_dir_f = new MatrixXs(num_edges, DIM);
         m_dir_v = new MatrixXs(num_particles, DIM);
@@ -236,9 +236,9 @@ public class CylindricalShallowFlow : HairFlow
         m_actual_u_f = new MatrixXs(num_edges, DIM);
         m_actual_u_v = new MatrixXs(num_particles, DIM);
 
-        m_edge_rad_vec = new VectorXs(num_edges);
-        m_rad_vec = new VectorXs(num_particles);
-        m_stored_friction_coeff = new VectorXs(num_edges);
+        m_edge_rad_vec = new Vectors(num_edges);
+        m_rad_vec = new Vectors(num_particles);
+        m_stored_friction_coeff = new Vectors(num_edges);
 
         m_area_v_hair_flat = new SparseXs(1, num_particles);
         m_Gv = new SparseXs(num_particles, num_particles);
@@ -260,27 +260,27 @@ public class CylindricalShallowFlow : HairFlow
 
         m_accel_v = new MatrixXs(num_particles, DIM);
         m_accel_f = new MatrixXs(num_edges, DIM);
-        m_porosity_e = new VectorXs(num_edges);
-        m_pressure = new VectorXs(num_particles);
+        m_porosity_e = new Vectors(num_edges);
+        m_pressure = new Vectors(num_particles);
 
         m_c_v = new MatrixXs(num_particles, DIM * DIM);
         m_c_star = new MatrixXs(num_edges, DIM * DIM);
 
-        m_edge_x = new VectorXs(num_edges);
-        m_u = new VectorXs(num_edges);
-        m_ustar = new VectorXs(num_edges);
-        m_accel_e = new VectorXs(num_edges);
-        m_cap_e = new VectorXs(num_edges);
+        m_edge_x = new Vectors(num_edges);
+        m_u = new Vectors(num_edges);
+        m_ustar = new Vectors(num_edges);
+        m_accel_e = new Vectors(num_edges);
+        m_cap_e = new Vectors(num_edges);
         m_cap_e.setZero();
-        m_edge_eta = new VectorXs(num_edges);
+        m_edge_eta = new Vectors(num_edges);
 
-        m_area_e_accu = new VectorXs(num_particles);
-        m_area_e_inv_mapping = new VectorXs(num_particles);
-        m_uvert = new VectorXs(num_particles);
+        m_area_e_accu = new Vectors(num_particles);
+        m_area_e_inv_mapping = new Vectors(num_particles);
+        m_uvert = new Vectors(num_particles);
 
-        m_old_rad_vec = new VectorXs(num_particles);
-        m_old_area_v = new VectorXs(num_particles);
-        m_delta_sol = new VectorXs(num_particles);
+        m_old_rad_vec = new Vectors(num_particles);
+        m_old_area_v = new Vectors(num_particles);
+        m_delta_sol = new Vectors(num_particles);
 
         if (m_parent.isMassSpring())
         {
@@ -295,20 +295,20 @@ public class CylindricalShallowFlow : HairFlow
             m_sol = new MatrixXs(num_particles, DIM + 2);
         }
 
-        m_liquid_mass = new VectorXs(num_particles);
-        m_mass_v = new VectorXs(num_particles);
+        m_liquid_mass = new Vectors(num_particles);
+        m_mass_v = new Vectors(num_particles);
 
-        m_old_eta = new VectorXs(num_particles);
+        m_old_eta = new Vectors(num_particles);
 
         m_edge_bridges = new List<List<int>>(num_edges);
     }
 
-    public override void updateFromFilteredGrid(in VectorXs x, ref VectorXs v, ref FluidSim fluidsim, in double dt)
+    public override void updateFromFilteredGrid(in Vectors x, ref Vectors v, ref FluidSim fluidsim, in double dt)
     {
         throw new System.NotImplementedException();
     }
 
-    public override void updateGeometricState(in VectorXs x, in VectorXs v, ref FluidSim fluidsim)
+    public override void updateGeometricState(in Vectors x, in Vectors v, ref FluidSim fluidsim)
     {
         throw new System.NotImplementedException();
     }
@@ -323,12 +323,12 @@ public class CylindricalShallowFlow : HairFlow
         throw new System.NotImplementedException();
     }
 
-    public override void updateReservoir(ref FluidSim fluidsim, in VectorXs x, in VectorXs v, in double dt)
+    public override void updateReservoir(ref FluidSim fluidsim, in Vectors x, in Vectors v, in double dt)
     {
         throw new System.NotImplementedException();
     }
 
-    public override void updateToFilteredGrid(in VectorXs x, in VectorXs v, ref FluidSim fluidsim, in double dt, int ibuffer)
+    public override void updateToFilteredGrid(in Vectors x, in Vectors v, ref FluidSim fluidsim, in double dt, int ibuffer)
     {
         throw new System.NotImplementedException();
     }
