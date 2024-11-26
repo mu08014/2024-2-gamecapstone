@@ -7,7 +7,7 @@ using UnityEngine.UIElements;
 
 public class StrandEquilibriumParameters
 {
-    public List<VectorXs> m_vertices;
+    public List<Vectors> m_vertices;
     public double m_curl_radius;
     public double m_curl_density;
     public double m_dL;
@@ -15,7 +15,7 @@ public class StrandEquilibriumParameters
     public bool m_valid;
     public bool m_dirty;
 
-    public StrandEquilibriumParameters(List<VectorXs> vertices, double curl_radius, double curl_density, double dL, double root_length, bool valid)
+    public StrandEquilibriumParameters(List<Vectors> vertices, double curl_radius, double curl_density, double dL, double root_length, bool valid)
     {
         m_vertices = vertices;
         m_curl_radius = curl_radius;

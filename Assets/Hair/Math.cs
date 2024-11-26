@@ -1,14 +1,8 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Drawing;
-using System.Numerics;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.UIElements;
-using static UnityEditor.Experimental.GraphView.Port;
 
 //Custom Math
 public class CMath
@@ -16,6 +10,7 @@ public class CMath
     public static double PI_4 = 0.785398163397448309616;
     public static double M_PI = 3.14159265358979323846;
     public static double M_PI_4 = 0.785398163397448309616;
+    public static double epsilon = 1e-16;
 
     public static double cube(double x)
     {
@@ -34,7 +29,7 @@ public class CMath
         else return a;
     }
 
-    public static int bipart_closest(in VectorXs v, double val)
+    public static int bipart_closest(in Vectors v, double val)
     {
         List<double> buff = new List<double>(v.size());
         for (int i = 0; i < v.size(); i++)
@@ -63,25 +58,14 @@ public class CMath
         return low;
     }
 
-    public static MatrixXs matProduct(VectorXs a, VectorXs b)
-    {
-        MatrixXs result = new MatrixXs(a.Size, b.Size);
-        for (int i = 0; i < a.Size; i++)
-        {
-            for (int j = 0; j < b.Size; j++)
-            {
-                result[i, j] = a[i] * b[j];
-            }
-        }
-        return result;
-    }
-
     public static MatrixXs matProduct(Vectors a, Vectors b)
     {
-        MatrixXs result = new MatrixXs(a.DIM, b.DIM);
-        for (int i = 0; i < a.DIM; i++)
+        int aSize = a.Size;
+        int bSize = b.Size;
+        MatrixXs result = new MatrixXs(aSize, bSize);
+        for (int i = 0; i < aSize; i++)
         {
-            for (int j = 0; j < b.DIM; j++)
+            for (int j = 0; j < bSize; j++)
             {
                 result[i, j] = a[i] * b[j];
             }
@@ -101,10 +85,10 @@ public class CMath
 
     public static MatrixXs outerProd(Vectors a, Vectors b)
     {
-        MatrixXs result = new MatrixXs(a.DIM, b.DIM);
-        for (int i = 0; i < a.DIM; i++)
+        MatrixXs result = new MatrixXs(a.Size, b.Size);
+        for (int i = 0; i < a.Size; i++)
         {
-            for (int j = 0; j < b.DIM; j++)
+            for (int j = 0; j < b.Size; j++)
             {
                 result[i, j] = a[i] * b[j];
             }
@@ -166,17 +150,17 @@ public class CMath
         return angle;
     }
 
-    public static void orthoNormalize(ref VectorXs v, in Vectors n) 
+    public static void orthoNormalize(ref Vectors v, in Vectors n) 
     {
-        Vectors vs = v.ToVectors();
+        Vectors vs = v;
         vs -= vs.dot(n)* n;
         vs = vs.normalize();
-        v = vs.ToVectorXs();
+        v = vs;
     }
 
-    public static VectorXs findNormal(VectorXs v)
+    public static Vectors findNormal(Vectors v)
     {
-        VectorXs result = new VectorXs(v.Size);
+        Vectors result = new Vectors(v.Size);
 
         int maxCoordinate = 0;
         int n = v.Size;
@@ -197,26 +181,6 @@ public class CMath
         return result.normalized();
     }
 
-    public static Vectors findNormal(Vectors v)
-    {
-        Vectors result = new Vectors(v.DIM);
-        int maxCoordinate = 0;
-        int n = v.DIM;
-        for (int i = 0; i < n; i++)
-        {
-            if (Math.Abs(v[i]) > Math.Abs(v[maxCoordinate]))
-            {
-                maxCoordinate = i;
-            }
-        }
-        {
-            int otherCoordinate = (maxCoordinate + 1) % n;
-            result[otherCoordinate] = v[maxCoordinate];
-            result[maxCoordinate] = -v[otherCoordinate];
-        }
-        return result.normalized();
-    }
-
     public static double innerBProduct(in MatrixXs B, in Vectors u, in  Vectors v)
     {
         return B[0, 0] * u[0] * v[0] + B[0, 1] * (u[0] * v[1] + u[1] * v[0]) +
@@ -234,11 +198,11 @@ public class CMath
         }
     }
 
-    public static void compute_cwiseProduct(ref VectorXs b, in VectorXs x, in VectorXs y)
+    public static void compute_cwiseProduct(ref Vectors b, in Vectors x, in Vectors y)
     {
-        VectorXs b_ptr = b;
-        VectorXs x_ptr = x;
-        VectorXs y_ptr = y;
+        Vectors b_ptr = b;
+        Vectors x_ptr = x;
+        Vectors y_ptr = y;
 
         Parallel.For(
             0, x.size(), k => { b_ptr[k] = x_ptr[k] * y_ptr[k]; });
@@ -246,10 +210,10 @@ public class CMath
         b = b_ptr;
     }
 
-    public static void accumulateJTPhi_coeff(ref VectorXs b, in double c, in VectorXs x, in SparseXs JT)
+    public static void accumulateJTPhi_coeff(ref Vectors b, in double c, in Vectors x, in SparseXs JT)
     {
-        VectorXs b_ptr = b;
-        VectorXs x_ptr = x;
+        Vectors b_ptr = b;
+        Vectors x_ptr = x;
         double c_ptr = c;
         SparseXs JT_ptr = JT;
 
@@ -263,12 +227,12 @@ public class CMath
         });
     }
 
-    public static void computeJTPhi_coeff(ref VectorXs b, in VectorXs c,
-        in VectorXs x, in SparseXs JT)
+    public static void computeJTPhi_coeff(ref Vectors b, in Vectors c,
+        in Vectors x, in SparseXs JT)
     {
-        VectorXs b_ptr = b;
-        VectorXs c_ptr = c;
-        VectorXs x_ptr = x;
+        Vectors b_ptr = b;
+        Vectors c_ptr = c;
+        Vectors x_ptr = x;
         SparseXs JT_ptr = JT;
 
         Parallel.For(0, JT.outerSize(), k => {
@@ -282,31 +246,58 @@ public class CMath
     }
 }
 
-public class VectorXs
+[Serializable]
+public class Vectors
 {
-    private List<double> elements;
-    public int Size => elements.Count;
+    [SerializeField]
+    private double[] elements = new double[0];
 
-    public VectorXs()
+    public int Size => elements.Length;
+
+    public static explicit operator UnityEngine.Vector3(Vectors v)
     {
-        elements = new List<double>();
+        return new UnityEngine.Vector3((float)v[0], (float)v[1], (float)v[2]);
     }
 
-    public VectorXs(int size)
+    public Vectors()
     {
-        elements = new List<double>(new double[size]);
+        elements = new double[0];
     }
 
-    public VectorXs(List<double> list, int start, int size)
+    public Vectors(int size)
     {
-        if (list.Count == size)
+        elements = new double[size];
+    }
+
+    public Vectors(double[] list)
+    {
+        elements = list;
+    }
+
+    public Vectors(double[] list, int start, int size)
+    {
+        if (list.Length == size)
             elements = list;
         else
         {
-            elements = new List<double>(list.Count - size);
+            elements = new double[list.Length - size];
+            for (int i = 0; i < list.Length - size; i++)
+            {
+                elements[i] = (list[start + i]);
+            }
+        }
+    }
+
+    public Vectors(List<double> list, int start, int size)
+    {
+        if (list.Count == size)
+            elements = list.ToArray();
+        else
+        {
+            elements = new double[list.Count - size];
             for (int i = 0; i < list.Count - size; i++)
             {
-                elements.Add(list[start + i]);
+                elements[i] = (list[start + i]);
             }
         }
     }
@@ -317,12 +308,12 @@ public class VectorXs
         set => elements[index] = value;
     }
 
-    public static VectorXs operator +(VectorXs a, VectorXs b)
+    public static Vectors operator +(Vectors a, Vectors b)
     {
         if (a.Size != b.Size)
             throw new System.Exception("벡터의 크기가 다릅니다.");
 
-        VectorXs result = new VectorXs(a.Size);
+        Vectors result = new Vectors(a.Size);
         for (int i = 0; i < a.Size; i++)
         {
             result[i] = a[i] + b[i];
@@ -330,12 +321,12 @@ public class VectorXs
         return result;
     }
 
-    public static VectorXs operator -(VectorXs a, VectorXs b)
+    public static Vectors operator -(Vectors a, Vectors b)
     {
         if (a.Size != b.Size)
             throw new System.Exception("벡터의 크기가 다릅니다.");
 
-        VectorXs result = new VectorXs(a.Size);
+        Vectors result = new Vectors(a.Size);
         for (int i = 0; i < a.Size; i++)
         {
             result[i] = a[i] - b[i];
@@ -343,9 +334,9 @@ public class VectorXs
         return result;
     }
 
-    public static VectorXs operator *(double a, VectorXs b)
+    public static Vectors operator *(double a, Vectors b)
     {
-        VectorXs result = new VectorXs(b.Size);
+        Vectors result = new Vectors(b.Size);
         for (int i = 0; i < b.Size; i++)
         {
             result[i] = a * b[i];
@@ -353,9 +344,9 @@ public class VectorXs
         return result;
     }
 
-    public static VectorXs operator *(VectorXs b, double a)
+    public static Vectors operator *(Vectors b, double a)
     {
-        VectorXs result = new VectorXs(b.Size);
+        Vectors result = new Vectors(b.Size);
         for (int i = 0; i < b.Size; i++)
         {
             result[i] = a * b[i];
@@ -363,11 +354,11 @@ public class VectorXs
         return result;
     }
 
-    public static VectorXs operator *(VectorXs a, VectorXs b)
+    public static Vectors operator *(Vectors a, Vectors b)
     {
         if (a.Size != 4 || b.Size != 4)
             throw new System.Exception("쿼터니언 곱을 할 수 없습니다.");
-        VectorXs result = new VectorXs(a.Size);
+        Vectors result = new Vectors(a.Size);
         result[0] = a[0] * b[0] - a[1] * b[1] - a[2] * b[2] - a[3] * b[3];
         result[1] = a[0] * b[1] + a[1] * b[0] + a[2] * b[3] - a[3] * b[2];
         result[2] = a[0] * b[2] - a[1] * b[3] + a[2] * b[0] + a[3] * b[1];
@@ -376,9 +367,9 @@ public class VectorXs
         return result;
     }
 
-    public static VectorXs operator /(VectorXs a, double b)
+    public static Vectors operator /(Vectors a, double b)
     {
-        VectorXs result = new VectorXs(a.Size);
+        Vectors result = new Vectors(a.Size);
         for (int i = 0; i < a.Size; i++)
         {
             if (a[i] != 0)
@@ -387,9 +378,9 @@ public class VectorXs
         return result;
     }
 
-    public static VectorXs operator +(UnityEngine.Quaternion q, VectorXs v)
+    public static Vectors operator +(UnityEngine.Quaternion q, Vectors v)
     {
-        VectorXs result = new VectorXs(3);
+        Vectors result = new Vectors(3);
         for (int i = 0;i < 3;i++)
         {
             result[0] = q.x + v[0];
@@ -401,15 +392,12 @@ public class VectorXs
 
     public void setZero()
     {
-        for (int i = 0; i < elements.Count; i++)
-        {
-            elements[i] = 0;
-        }
+        elements = new double[elements.Length];
     }
 
     public int size()
     {
-        return elements.Count;
+        return elements.Length;
     }
 
     public double norm()
@@ -423,12 +411,12 @@ public class VectorXs
         return result;
     }
 
-    public VectorXs qinverse()
+    public Vectors qinverse()
     {
         if (Size != 4)
             throw new System.Exception("쿼터니언이 아닙니다.");
 
-        VectorXs result = new VectorXs(4);
+        Vectors result = new Vectors(4);
 
         double qsquare = norm() * norm();
 
@@ -453,20 +441,7 @@ public class VectorXs
 
     public void resize(int size)
     {
-        List<double> values = new List<double>(Size);
-        for (int i = 0; i < Size; i++)
-        {
-            values.Add(elements[i]);
-        }
-
-        elements = new List<double>(size);
-        for (int i = 0; i < size; i++)
-        {
-            if (i < values.Count)
-                elements.Add(values[i]);
-            else
-                elements.Add(0);
-        }
+        elements = new double[size];
     }
 
     public Vectors segment(int start, int n)
@@ -479,35 +454,16 @@ public class VectorXs
         return vectors;
     }
 
-    // .segment() = Vectors 형태일 때 사용
     public void SetSegment(int start, int n, Vectors v)
-    {
-        if (v.DIM != n)
-            throw new System.Exception("벡터의 크기가 다릅니다.");
-
-        for (int i = start; i < start + n; i++)
-        {
-            if (i >= elements.Count)
-            {
-                elements.Add(elements[i]);
-            }
-            else
-            {
-                elements[i] = v[i - start];
-            }
-        }
-    }
-
-    public void SetSegment(int start, int n, VectorXs v)
     {
         if (v.Size != n)
             throw new System.Exception("벡터의 크기가 다릅니다.");
 
         for (int i = start; i < start + n; i++)
         {
-            if (i >= elements.Count)
+            if (i >= elements.Length)
             {
-                elements.Add(elements[i]);
+                throw new System.Exception("벡터의 크기를 초과했습니다.");
             }
             else
             {
@@ -516,10 +472,10 @@ public class VectorXs
         }
     }
 
-    public VectorXs normalized()
+    public Vectors normalize()
     {
         double sum = 0;
-        VectorXs vectors = new VectorXs(Size);
+        Vectors vectors = new Vectors(Size);
         for (int i = 0; i < Size; i++)
         {
             sum += elements[i] * elements[i];
@@ -537,41 +493,71 @@ public class VectorXs
         return vectors;
     }
 
-    public VectorXs cross(VectorXs v)
+    public Vectors normalized()
+    {
+        double sum = 0;
+        Vectors vectors = new Vectors(Size);
+        for (int i = 0; i < Size; i++)
+        {
+            sum += elements[i] * elements[i];
+        }
+
+        if (sum > 0)
+        {
+            sum = Math.Sqrt(sum);
+            for (int i = 0; i < Size; i++)
+            {
+                if (elements[i] != 0)
+                    vectors[i] = elements[i] / sum;
+            }
+        }
+        return vectors;
+    }
+
+    public Vectors cross(Vectors v)
     {
         if (v.Size != 3)
             throw new System.Exception("벡터의 크기가 다릅니다.");
-        VectorXs result = new VectorXs(3);
+        Vectors result = new Vectors(3);
         result[0] = elements[1] * v[2] - elements[2] * v[1];
         result[1] = elements[2] * v[0] - elements[0] * v[2];
         result[2] = elements[0] * v[1] - elements[1] * v[0];
         return result;
     }
 
-    public Vectors ToVectors()
+    public Vectors setConstant(double value)
+    {
+        for (int i = 0; i < Size; i++)
+        {
+            elements[i] = value;
+        }
+        return this;
+    }
+
+    public double squaredNorm()
+    {
+        double sum = 0;
+        for (int i = 0; i < Size; i++)
+        {
+            sum += elements[i] * elements[i];
+        }
+        return sum;
+    }
+
+    public Vectors Clone()
     {
         Vectors result = new Vectors(Size);
         for (int i = 0; i < Size; i++)
         {
             result[i] = elements[i];
         }
-        return result;
-    }
-
-    public VectorXs Clone()
-    {
-        VectorXs result = new VectorXs(Size);
-        for (int i = 0; i < Size; i++)
-        {
-            result[i] = elements[i];
-        }
 
         return result;
     }
 
-    public double dot(VectorXs a)
+    public double dot(Vectors a)
     {
-        if (a.Size != elements.Count)
+        if (a.Size != elements.Length)
             throw new System.Exception("벡터의 크기가 다릅니다.");
 
         double result = 0;
@@ -582,9 +568,9 @@ public class VectorXs
         return result;
     }
 
-    public VectorXs cwiseInverse()
+    public Vectors cwiseInverse()
     {
-        VectorXs result = new VectorXs(Size);
+        Vectors result = new Vectors(Size);
         for (int i = 0; i < Size;i++)
         {
             result[i] = elements[i] != 0 ? 1.0 / elements[i] : 0;
@@ -592,12 +578,12 @@ public class VectorXs
         return result;
     }
 
-    public VectorXs cwiseProduct(VectorXs v)
+    public Vectors cwiseProduct(Vectors v)
     {
-        if (v.Size != elements.Count)
+        if (v.Size != elements.Length)
             throw new System.Exception("벡터의 크기가 다릅니다.");
 
-        VectorXs result = new VectorXs(Size);
+        Vectors result = new Vectors(Size);
         for(int i = 0; i < Size; i++)
         {
             result[i] = v[i] * elements[i];
@@ -605,16 +591,16 @@ public class VectorXs
         return result;
     }
 
-    public void PlusSegment(int start, int n, VectorXs v)
+    public void PlusSegment(int start, int n, Vectors v)
     {
         if (v.Size != n)
             throw new System.Exception("벡터의 크기가 다릅니다.");
 
         for (int i = start; i < start + n; i++)
         {
-            if (i >= elements.Count)
+            if (i >= elements.Length)
             {
-                elements.Add(elements[i]);
+                throw new System.Exception("벡터의 크기를 초과했습니다.");
             }
             else
             {
@@ -625,17 +611,23 @@ public class VectorXs
 
     public void conservativeResize(int size)
     {
-        int currentSize = elements.Count;
+        int currentSize = elements.Length;
 
         if (size > currentSize)
         {
             // 크기가 증가하는 경우, 부족한 부분을 0으로 채움
-            elements.AddRange(new int[size - currentSize]);
+            double[] newArray = new double[size];
+            System.Array.Copy(elements, 0, newArray, 0, currentSize);
+
+            elements = newArray;
         }
         else if (size < currentSize)
         {
             // 크기가 감소하는 경우, 요소를 잘라냄
-            elements.RemoveRange(size, currentSize - size);
+            double[] newArray = new double[size];
+
+            System.Array.Copy(elements, 0, newArray, 0, size);
+            elements = newArray;
         }
     }
 }
@@ -648,6 +640,11 @@ public class VectorXi
     public VectorXi(int size)
     {
         elements = new List<int>(new int[size]);
+    }
+
+    public VectorXi(int[] list)
+    {
+        elements = new List<int>(list);
     }
 
     public int this[int index]
@@ -839,217 +836,6 @@ public class TripletXs
     {
         elements.Capacity = size;
     }
-}
-
-[Serializable]
-public class Vectors //<DIM>으로 구현되어 있는거 클래스 변수로 바꿈
-{
-    public int DIM;
-    [SerializeField]
-    private double[] values;
-
-    public static explicit operator UnityEngine.Vector3(Vectors v)
-    {
-        return new UnityEngine.Vector3((float)v[0], (float)v[1], (float) v[2]);
-    }
-
-    public Vectors(int dim)
-    {
-        DIM = dim;
-        values = new double[dim];
-    }
-
-    public double this[int index]
-    {
-        get => values[index];
-        set => values[index] = value;
-    }
-
-    public static Vectors operator +(Vectors a, Vectors b)
-    {
-        if (a.DIM != b.DIM)
-            throw new System.Exception("벡터의 크기가 다릅니다.");
-
-        Vectors result = new Vectors(a.DIM);
-        for (int i = 0; i < a.DIM; i++)
-        {
-            result[i] = a[i] + b[i];
-        }
-        return result;
-    }
-
-    public static Vectors operator -(Vectors a, Vectors b)
-    {
-        if (a.DIM != b.DIM)
-            throw new System.Exception("벡터의 크기가 다릅니다.");
-
-        Vectors result = new Vectors(a.DIM);
-        for (int i = 0; i < a.DIM; i++)
-        {
-            result[i] = a[i] - b[i];
-        }
-        return result;
-    }
-
-    public static Vectors operator *(Vectors a, double b)
-    {
-        Vectors result = new Vectors(a.DIM);
-        for (int i = 0; i < a.DIM; i++)
-        {
-            result[i] = a[i] * b;
-        }
-        return result;
-    }
-
-    public static Vectors operator *(double b, Vectors a)
-    {
-        Vectors result = new Vectors(a.DIM);
-        for (int i = 0; i < a.DIM; i++)
-        {
-            result[i] = a[i] * b;
-        }
-        return result;
-    }
-
-    public static Vectors operator /(Vectors a, double b)
-    {
-        Vectors result = new Vectors(a.DIM);
-        for (int i = 0; i < a.DIM; i++)
-        {
-            result[i] = a[i] / b;
-        }
-        return result;
-    }
-
-    public Vectors cross(Vectors v)
-    {
-        if (v.DIM != 3)
-            throw new System.Exception("벡터의 크기가 다릅니다.");
-        Vectors result = new Vectors(3);
-        result[0] = values[1] * v[2] - values[2] * v[1];
-        result[1] = values[2] * v[0] - values[0] * v[2];
-        result[2] = values[0] * v[1] - values[1] * v[0];
-        return result;
-    }
-
-    public double dot(Vectors a)
-    {
-        double result = 0;
-        for (int i = 0; i < DIM; i++)
-        {
-            result += values[i] * a[i];
-        }
-        return result;
-    }
-
-    public void setZero()
-    {
-        for (int i = 0; i < DIM; i++)
-            values[i] = 0;
-    }
-
-    public double norm()
-    {
-        double result = 0;
-        for (int i = 0; i < DIM; i++)
-        {
-            result += values[i] * values[i];
-        }
-        result = Math.Sqrt(result);
-        return result;
-    }
-
-    public Vectors normalized()
-    {
-        double sum = 0;
-        Vectors vectors = new Vectors(DIM);
-        for (int i = 0; i < DIM; i++)
-        {
-            sum += values[i] * values[i];
-        }
-
-        if (sum > 0)
-        {
-            sum = Math.Sqrt(sum);
-            for (int i = 0; i < DIM; i++)
-            {
-                if (values[i] != 0)
-                    vectors[i] = values[i] / sum;
-            }
-        }
-        return vectors;
-    }
-
-    public Vectors segment(int start, int n)
-    {
-        Vectors vectors = new Vectors(n);
-        for (int i = start; i < start + n; i++)
-        {
-            vectors[i - start] = values[i];
-        }
-        return vectors;
-    }
-
-    public Vectors Clone()
-    {
-        Vectors result = new Vectors(DIM);
-        for (int i = 0; i < DIM; i++)
-        {
-            result[i] = values[i];
-        }
-        return result;
-    }
-
-    public double squaredNorm()
-    {
-        double sum = 0;
-        for (int i = 0; i < DIM; i++)
-        {
-            sum += values[i] * values[i];
-        }
-        return sum;
-    }
-
-    public Vectors normalize()
-    {
-        double sum = 0;
-        Vectors vectors = new Vectors(DIM);
-        for (int i = 0; i < DIM; i++)
-        {
-            sum += values[i] * values[i];
-        }
-
-        if (sum > 0)
-        {
-            sum = Math.Sqrt(sum);
-            for (int i = 0; i < DIM; i++)
-            {
-                if (values[i] != 0)
-                    vectors[i] = values[i] / sum;
-            }
-        }
-        return vectors;
-    }
-
-    public Vectors setConstant(double value)
-    {
-        for (int i = 0;i < DIM;i++)
-        {
-            values[i] = value;
-        }
-        return this;
-    }
-
-    public VectorXs ToVectorXs()
-    {
-        VectorXs result = new VectorXs(DIM);
-        for (int i = 0; i < DIM; i++)
-        {
-            result[i] = values[i];
-        }
-        return result;
-    }
-
 }
 
 public class MatrixXs
@@ -1283,9 +1069,9 @@ public class MatrixXs
         return v;
     }
 
-    public VectorXs col(int i)
+    public Vectors col(int i)
     {
-        VectorXs v = new VectorXs(i);
+        Vectors v = new Vectors(i);
         for (int j = 0; j < rows; j++)
         {
             v[j] = data[j, i];
@@ -1356,7 +1142,7 @@ public class SparseXs
         matrix = new Dictionary<(int, int), double>();
         foreach (var d in spXs.matrix)
         {
-            if (d.Value != 0)
+            if (Math.Abs(d.Value) > CMath.epsilon)
                 matrix.Add((d.Key.Item1, d.Key.Item2), d.Value);
         }
         Rows = spXs.Rows;
@@ -1379,7 +1165,10 @@ public class SparseXs
         {
             if (result.matrix.ContainsKey((rowB, colB)))
             {
-                result.matrix[(rowB, colB)] += valueB;
+                if (Math.Abs(result.matrix[(rowB, colB)] + valueB) <= CMath.epsilon)
+                    result.matrix.Remove((rowB, colB));
+                else
+                    result.matrix[(rowB, colB)] += valueB;
             }
             else
             {
@@ -1393,9 +1182,12 @@ public class SparseXs
     public static SparseXs operator *(SparseXs b, double a)
     {
         SparseXs result = new SparseXs(b.Rows, b.Cols);
-        foreach (var ((row, col), value) in b.matrix)
+        if (Math.Abs(a) > CMath.epsilon)
         {
-            result.insert(row, col, value * a);
+            foreach (var ((row, col), value) in b.matrix)
+            {
+                result.insert(row, col, value * a);
+            }
         }
         return result;
     }
@@ -1403,35 +1195,26 @@ public class SparseXs
     public static SparseXs operator *(double a, SparseXs b)
     {
         SparseXs result = new SparseXs(b.Rows, b.Cols);
-        foreach (var ((row, col), value) in b.matrix)
+        if (Math.Abs(a) > CMath.epsilon)
         {
-            result.insert(row, col, value * a);
-        }
-        return result;
-    }
-
-    public static VectorXs operator *(SparseXs a, VectorXs b)
-    {
-        if (a.Cols != b.Size)
-            throw new ArgumentException("행렬 곱셈을 위해선 A의 열 개수가 B의 벡터 크기가 같아야 합니다.");
-
-        VectorXs result = new VectorXs(a.Rows);
-        foreach (var ((rowA, colA), valueA) in a.matrix)
-        {
-            result[rowA] += b[colA] * valueA;
+            foreach (var ((row, col), value) in b.matrix)
+            {
+                result.insert(row, col, value * a);
+            }
         }
         return result;
     }
 
     public static Vectors operator *(SparseXs a, Vectors b)
     {
-        if (a.Cols != b.DIM)
+        if (a.Cols != b.Size)
             throw new ArgumentException("행렬 곱셈을 위해선 A의 열 개수가 B의 벡터 크기가 같아야 합니다.");
 
         Vectors result = new Vectors(a.Rows);
         foreach (var ((rowA, colA), valueA) in a.matrix)
         {
-            result[rowA] += b[colA] * valueA;
+            if (Math.Abs(valueA) > CMath.epsilon)
+                result[rowA] += b[colA] * valueA;
         }
         return result;
     }
@@ -1443,16 +1226,25 @@ public class SparseXs
 
         SparseXs result = new SparseXs(a.Rows, b.Cols);
 
+        var bRowDict = new Dictionary<int, List<(int col, double value)>>();
+
+        foreach (var ((rowB, colB), valueB) in b.matrix)
+        {
+            if (!bRowDict.ContainsKey(rowB))
+                bRowDict[rowB] = new List<(int col, double value)>();
+
+            bRowDict[rowB].Add((colB, valueB));
+        }
+
         foreach (var ((rowA, colA), valueA) in a.matrix)
         {
-            for (int colB = 0; colB < b.Cols; colB++)
+            if (!bRowDict.ContainsKey(colA)) continue;
+
+            foreach (var (colB, valueB) in bRowDict[colA])
             {
-                double valueB = b.GetValue(colA, colB);
-                if (valueB != 0.0)
-                {
-                    double newValue = result.GetValue(rowA, colB) + valueA * valueB;
-                    result.insert(rowA, colB, newValue);
-                }
+                // rowA와 colB에 대해 결과 계산
+                double newValue = result.GetValue(rowA, colB) + valueA * valueB;
+                result.insert(rowA, colB, newValue);
             }
         }
 
@@ -1465,7 +1257,7 @@ public class SparseXs
         {
             Debug.LogError($"Invalid index: row={row}, col={col}");
         }
-        if (value != 0)
+        if (Math.Abs(value) > CMath.epsilon)
             matrix[(row, col)] = value;
     }
 
@@ -1483,9 +1275,11 @@ public class SparseXs
     {
         for (int i = 0; i < tpXs.Size; i++)
         {
-            var key = (tpXs[i].getrow(), tpXs[i].getcol());
-            if (tpXs[i].getvalue() != 0)
+            if (Math.Abs(tpXs[i].getvalue()) > CMath.epsilon)
+            {
+                var key = (tpXs[i].getrow(), tpXs[i].getcol());
                 matrix[key] = tpXs[i].getvalue();
+            }
         }
 
     }
@@ -1507,9 +1301,9 @@ public class SparseXs
         return tp;
     }
 
-    public VectorXs diagonal()
+    public Vectors diagonal()
     {
-        VectorXs result = new VectorXs(Rows > Cols ? Cols : Rows);
+        Vectors result = new Vectors(Rows > Cols ? Cols : Rows);
         for (int i = 0; i < Math.Min(Rows, Cols); i++)
         {
             result[i] = GetValue(i, i);

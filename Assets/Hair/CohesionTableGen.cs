@@ -27,11 +27,11 @@ public class CohesionTable
     private MatrixXs m_alpha_planar_table;
     private MatrixXs m_dEdd_planar_table;
 
-    private VectorXs m_max_As;
-    private VectorXs m_min_As;
+    private Vectors m_max_As;
+    private Vectors m_min_As;
 
-    private VectorXs m_max_A_planars;
-    private VectorXs m_min_A_planars;
+    private Vectors m_max_A_planars;
+    private Vectors m_min_A_planars;
 
     private double m_radius_multiplier;
     private double m_radius_multiplier_planar;
@@ -547,7 +547,7 @@ public class CohesionTable
 
         for (int i = 0; i < m_discretization; ++i)
         {
-            VectorXs v = m_A_table.col(i);
+            Vectors v = m_A_table.col(i);
 
             double A_inc = (m_max_As[i] - m_min_As[i]) / m_discretization;
 
@@ -646,7 +646,7 @@ public class CohesionTable
 
         for (int i = 0; i < m_discretization; ++i)
         {
-            VectorXs v = m_A_planar_table.col(i);
+            Vectors v = m_A_planar_table.col(i);
 
             double A_inc = (m_max_A_planars[i] - m_min_A_planars[i]) / m_discretization;
 
