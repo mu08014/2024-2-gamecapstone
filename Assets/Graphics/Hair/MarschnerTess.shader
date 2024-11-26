@@ -137,7 +137,7 @@ Shader "Custom/MarschnerTess"
             [outputtopology("triangle_cw")]
             [outputcontrolpoints(3)]
             [patchconstantfunc("PatchConstantFunction")]
-            [maxtessfactor(64)]
+            //[maxtessfactor(64)]
             v2f hull(InputPatch<v2f, 3> input, 
                 uint controlPointID : SV_OutputControlPointID)
             {

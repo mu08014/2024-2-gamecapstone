@@ -89,7 +89,7 @@ public class FurMeshSpline : FurMesh
         tangentBuffer ??= new ComputeBuffer(pos.Length, sizeof(float) * 3);
         posBuffer.SetData(pos);
         var rend = GetComponentInParent<MeshRenderer>();
-        rend.material.SetBuffer("_VertexPosition", posBuffer);
+        rend.sharedMaterial.SetBuffer("_VertexPosition", posBuffer);
         //rend.material.SetBuffer("_Tengents", tangentBuffer);
 
         //idx.Clear();
