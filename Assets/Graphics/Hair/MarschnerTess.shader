@@ -31,6 +31,10 @@ Shader "Custom/MarschnerTess"
             #pragma vertex vert
             #pragma geometry geom
             #pragma fragment frag
+            #pragma hull hull
+            #pragma domain domain
+            #pragma require geometry
+            #pragma require tessellation tessHW
             #pragma multi_compile_fwdbase
             #pragma multi_compile_shadowcaster
             #include "UnityCG.cginc"
@@ -38,7 +42,9 @@ Shader "Custom/MarschnerTess"
 
             #define MAX_HAIR_PARTICLE 15
             #define PARTICLE_COUNT 4
-            #define BAZIER_COUNT 19
+            #define BAZIER_COUNT 10
+            #define _TessellationFactor 3
+            #define _TessellationEdgeLength 1
 
             StructuredBuffer<float3> _VertexPosition; // 모든 position을 한 번에 전달
             
@@ -72,15 +78,41 @@ Shader "Custom/MarschnerTess"
 
                 float3 lightDir : TEXCOORD2;
                 float3 cameraDir : TEXCOORD3;
-                float2 idx : TEXCOORD4;
 
-                SHADOW_COORDS(1)
+                float3 middle : TEXCOORD5;
+                float3 head : TEXCOORD6;
+                float3 tail : TEXCOORD7;
+                //SHADOW_COORDS(1)
+            };
+
+            struct h2d_ConstantOutput {
+                float TessEdge[3] : SV_TessFactor;
+                float TessInside : SV_InsideTessFactor;
             };
             
             v2f vert (appdata v)
             {
                 v2f o;
-                o.pos = float4(0, 0, 0, 0);
+                
+                int hindex = (int)v.idx.x;
+                int pindex = (int)v.idx.y;
+                
+                if (pindex == 0) {
+                    o.head = _VertexPosition[hindex * PARTICLE_COUNT + pindex];
+                    o.tail = _VertexPosition[hindex * PARTICLE_COUNT + pindex + 1];
+                    o.middle = (o.head + o.tail) / 2;
+                }
+                else if (pindex == PARTICLE_COUNT - 1) {
+                    o.head = _VertexPosition[hindex * PARTICLE_COUNT + pindex - 1];
+                    o.tail = _VertexPosition[hindex * PARTICLE_COUNT + pindex];
+                    o.middle = (o.head + o.tail) / 2;
+                } else {
+                    o.middle = _VertexPosition[hindex * PARTICLE_COUNT + pindex];
+                    o.head = _VertexPosition[hindex * PARTICLE_COUNT + pindex - 1];
+                    o.tail = _VertexPosition[hindex * PARTICLE_COUNT + pindex + 1];
+                }
+                
+                o.pos = v.vertex;
                 o.normal = v.normal;
                 o.tangent = normalize(v.tangent);
                 
@@ -92,57 +124,91 @@ Shader "Custom/MarschnerTess"
                 o.color = tex2Dlod(_MainTex, float4(v.uv, 0, 0));
                 o.color = _Color;
 
-                o.idx = v.idx;
-
-                TRANSFER_SHADOW(o);
+                //TRANSFER_SHADOW(o);
              
                 return o;
             }
-             
+
+
+
+            // Hull Shader (Tessellation Control)
+            [domain("tri")]
+            [partitioning("integer")]
+            [outputtopology("triangle_cw")]
+            [outputcontrolpoints(3)]
+            [patchconstantfunc("PatchConstantFunction")]
+            [maxtessfactor(64)]
+            v2f hull(InputPatch<v2f, 3> input, 
+                uint controlPointID : SV_OutputControlPointID)
+            {
+                return input[controlPointID];
+            }
+
+            h2d_ConstantOutput PatchConstantFunction(InputPatch<v2f, 3> patch) {
+                h2d_ConstantOutput o = (h2d_ConstantOutput)0;
+                float edge = _TessellationFactor * (1.0 / _TessellationEdgeLength);
+                o.TessEdge[0] = o.TessEdge[1] = o.TessEdge[2] = edge;
+                o.TessInside = edge;
+                return o;
+            }
+
+            // Domain Shader (Tessellation Evaluation)
+            [domain("tri")]
+            v2f domain(
+                h2d_ConstantOutput tessFactors, 
+                OutputPatch<v2f, 3> patch,
+                float3 bary : SV_DomainLocation) 
+            {
+                v2f output;
+                
+                output.head = bary.x * patch[0].head +
+                             bary.y * patch[1].head +
+                             bary.z * patch[2].head;
+                             
+                output.middle = bary.x * patch[0].middle +
+                             bary.y * patch[1].middle +
+                             bary.z * patch[2].middle;
+                             
+                output.tail = bary.x * patch[0].tail +
+                             bary.y * patch[1].tail +
+                             bary.z * patch[2].tail;
+
+                float3 pos = bary.x * patch[0].pos +
+                             bary.y * patch[1].pos +
+                             bary.z * patch[2].pos;
+
+                output.pos = UnityObjectToClipPos(float4(pos, 1.0));
+                return output;
+            }
              
             // Geometry Shader: 메시 인덱스를 받아 삼각형으로 변환
             [maxvertexcount((BAZIER_COUNT + 1) * 2)]
-            void geom(point v2f input[1], inout TriangleStream<v2f> triStream)
-            { 
-                int hindex = (int)input[0].idx.x;
-                int pindex = (int)input[0].idx.y;
+            void geom(triangle v2f input[3], inout TriangleStream<v2f> triStream)
+            {
+                for (int i = 0; i < 1; i++) {
+                    float3 pos0 = (input[0].head + input[1].head + input[2].head) / 3;
+                    float3 pos1 = (input[0].middle + input[1].middle + input[2].middle) / 3;
+                    float3 pos2 = (input[0].tail + input[1].tail + input[2].tail) / 3;
 
-                float3 pos0;
-                float3 pos1;
-                float3 pos2;
+                    for (int j = BAZIER_COUNT; j >= 0; j--) {
+                        float3 n0 = (pos0 * j + pos1 * (BAZIER_COUNT - j)) / BAZIER_COUNT;
+                        float3 n1 = (pos1 * j + pos2 * (BAZIER_COUNT - j)) / BAZIER_COUNT;
+                        float3 n = (n0 * j + n1 * (BAZIER_COUNT - j)) / BAZIER_COUNT;
 
-                if (pindex == 0) {
-                    pos0 = _VertexPosition[hindex * PARTICLE_COUNT + pindex];
-                    pos2 = (_VertexPosition[hindex * PARTICLE_COUNT + pindex + 1] + pos0) / 2.0;
-                    pos1 = (pos0 + pos2) / 2.0;
-                } else if (pindex == PARTICLE_COUNT - 1) {
-                    pos0 = _VertexPosition[hindex * PARTICLE_COUNT + pindex];
-                    pos2 = (_VertexPosition[hindex * PARTICLE_COUNT + pindex - 1] + pos0) / 2.0;
-                    pos1 = (pos0 + pos2) / 2.0;
-                } else {
-                    pos1 = _VertexPosition[hindex * PARTICLE_COUNT + pindex];
-                    pos0 = (_VertexPosition[hindex * PARTICLE_COUNT + pindex - 1] + pos1) / 2.0;
-                    pos2 = (_VertexPosition[hindex * PARTICLE_COUNT + pindex + 1] + pos1) / 2.0;
-                }
+                        float4 nn = UnityObjectToClipPos(float4(n, 1));
                     
-                for (int j = BAZIER_COUNT; j >= 0; j--) {
-                    float3 n0 = (pos0 * j + pos1 * (BAZIER_COUNT - j)) / BAZIER_COUNT;
-                    float3 n1 = (pos1 * j + pos2 * (BAZIER_COUNT - j)) / BAZIER_COUNT;
-                    float3 n = (n0 * j + n1 * (BAZIER_COUNT - j)) / BAZIER_COUNT;
+                        float3 offset = float3(0.01, 0, 0);
+                        v2f p0 = input[0]; p0.pos = nn;
+                        v2f v0 = p0, v1 = p0;
+                        v0.pos.xy += offset.xy;
+                        v1.pos.xy -= offset.xy;
 
-                    float4 nn = UnityObjectToClipPos(float4(n, 1));
-                    
-                    float3 offset = float3(0.01, 0, 0);
-                    v2f p0 = input[0]; p0.pos = nn;
-                    v2f v0 = p0, v1 = p0;
-                    v0.pos.xy += offset.xy;
-                    v1.pos.xy -= offset.xy;
-
-                    triStream.Append(v0);
-                    triStream.Append(v1);
+                        triStream.Append(v0);
+                        triStream.Append(v1);
+                    }
                 }
             }
-
+            
             float4 frag (v2f i) : SV_Target
             {
                 return float4(1, 0, 0, 1);
@@ -181,7 +247,7 @@ Shader "Custom/MarschnerTess"
             }
             ENDCG
         }
-
+        /*
         Pass
         {
             Tags { "LightMode" = "ShadowCaster" }
@@ -226,6 +292,7 @@ Shader "Custom/MarschnerTess"
             }
             ENDCG
         }
+        */
         //UsePass "VertexLit/SHADOWCASTER"
     }
     FallBack "Diffuse"

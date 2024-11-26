@@ -53,6 +53,7 @@ Shader "Custom/RaymarchMetaballMRT"
             float _Radius;
             float _K;
 
+            // 파티클 위치들
             StructuredBuffer<float3> _ParticlePoses;
             int _ParticleCount = 0;
 
@@ -109,7 +110,7 @@ Shader "Custom/RaymarchMetaballMRT"
                 return r / (length(d-c));   
             }
 
-            // exponential
+            // exponential smooth min
             float smin( float a, float b, float k )
             {
                 k *= 1.0;
@@ -221,10 +222,10 @@ Shader "Custom/RaymarchMetaballMRT"
                         discard;
 
                     // color
-                    col.rgb = _Color;
-                    col.a = 0.1;
+                    //col.rgb = _Color;
+                    //col.a = 0.1;
 
-                    col.rgb = tex2D(_CameraDepthTexture, float2(0.5 + proj.x / 2, 0.5 - proj.y / 2));
+                    //col.rgb = tex2D(_CameraDepthTexture, float2(0.5 + proj.x / 2, 0.5 - proj.y / 2));
                     
                     // SSR
                     half3 ssr_ro = p; 
@@ -252,13 +253,12 @@ Shader "Custom/RaymarchMetaballMRT"
                     col += sp;
                     
                     color = col;
+
                     half3 n_cam = mul(i.viewMatrixIT, n);
                     n_cam.xyz = normalize(n_cam.xyz);
                     n_cam.xyz += 1.0f;
                     n_cam.xyz /= 2.0f;
-                    
                     normal = float4(n_cam, 1);
-                    //color = half4(n_cam.xyz, 1);
                 } 
             }
 

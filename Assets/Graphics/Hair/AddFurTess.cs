@@ -9,14 +9,6 @@ using UnityEngine.UIElements;
 
 public class AddFurTess : AddFur
 {
-    [SerializeField] GameObject _furmeshprefab;
-    [SerializeField] Material _furmaterial = null;
-    [SerializeField] Texture2D _lengthTexture;
-
-
-    private Mesh _mesh;
-    private MeshFilter _meshFilter;
-
     private class Vertex {
         public Vector3 position;
         public Vector3 normal;
@@ -105,15 +97,15 @@ public class AddFurTess : AddFur
 
         for (int i = 0; i < tris.Length; i += 3)
         {
-            var v1 = new Vertex(vertices[tris[i]], normals[tris[i]], uvs[tris[i]]);
-            var v2 = new Vertex(vertices[tris[i+1]], normals[tris[i+1]], uvs[tris[i+1]]);
-            var v3 = new Vertex(vertices[tris[i+2]], normals[tris[i+2]], uvs[tris[i+2]]);
+            var normal = (normals[tris[i]] + normals[tris[i + 1]] + normals[tris[i + 2]]) / 3;
+            var v1 = new Vertex(vertices[tris[i]], normal, uvs[tris[i]]);
+            var v2 = new Vertex(vertices[tris[i+1]], normal, uvs[tris[i+1]]);
+            var v3 = new Vertex(vertices[tris[i+2]], normal, uvs[tris[i+2]]);
             MakeFur(Iter, v1, v2, v3);
         }
 
-        //furmesh.UpdateMesh();
         if (furmesh is FurMeshTess mesh)
-            mesh.UpdateMeshTess(Iter, Rod);
+            mesh.UpdateMeshTess(Iter, Rod, tris.Length / 3);
         else
             furmesh.UpdateMesh();
     }

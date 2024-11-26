@@ -75,11 +75,11 @@ public class FurMesh : MonoBehaviour
         _hairs.Clear();
     }
     
-    public List<Vector3> tangents = new();
-    public List<Vector2> uvs = new();
-    public List<Vector3> normals = new();
-    public List<Vector3> positions = new();
-    public List<int> indices = new();
+    protected List<Vector3> tangents = new();
+    protected List<Vector2> uvs = new();
+    protected List<Vector3> normals = new();
+    protected List<Vector3> positions = new();
+    protected List<int> indices = new();
 
     public Vector3[] getHairParticlePosArray()
     {
