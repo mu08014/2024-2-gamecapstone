@@ -27,9 +27,9 @@ public class FurMesh : MonoBehaviour
     public Mesh hairMesh;
 
 
-    private AddFur parent;
+    private AddFur _parent; // 유니티 계층구조 parent와 별개. furmesh 인스턴스를 생성시킨 addfur 저장하기 위해 사용
 
-    public AddFur Parent { get { return parent; } set { parent = value; } }
+    public AddFur Parent { get { return _parent; } set { _parent = value; } }
 
     private MeshRenderer _meshRenderer;
     public MeshRenderer meshRenderer
@@ -192,7 +192,7 @@ public class FurMesh : MonoBehaviour
         hairMesh.SetIndices(indices.ToArray(), MeshTopology.Lines, 0);
         hairMesh.RecalculateBounds();
 
-        GetComponentInParent<HairComponent>().SetHairInfo(this.parent, particles);
+        this._parent.GetComponent<HairComponent>().SetHairInfo(this._parent, particles);
 
 
         

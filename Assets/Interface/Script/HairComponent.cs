@@ -14,7 +14,7 @@ public class HairComponent : MonoBehaviour {
     [SerializeField] 
     GameObject _furmeshprefab;
 
-    [HideInInspector]
+    [SerializeField, HideInInspector]
     public List<HairParticle> hairParticles;
 
     [SerializeField]
@@ -163,7 +163,7 @@ public class HairComponent : MonoBehaviour {
                 for (int j = 0; j < hairParticles.Count; j++)
                 {
                     m_hair_v[j] = new Vectors(3);
-                    if (m_hair_fixed[j])
+                    if (!m_hair_fixed[j])
                     {
                                            ////////////////////////////////////////////////////////////속도 초기값 
                         m_hair_v[j][0] = 0.00f;
