@@ -411,6 +411,7 @@ public class StrandCompliantManager : SceneStepper
                                      dx, dv, dt);
     }
 
+    [BurstCompile]
     public void localPreIterate(ref TwoDScene scene, double dt)
     {
         TwoDScene local_scene = scene;

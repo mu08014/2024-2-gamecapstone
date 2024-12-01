@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Unity.Mathematics;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -868,7 +869,7 @@ public class MatrixXs
                 data[i, j] = other.data[i, j];
     }
 
-    public static MatrixXs operator *(double b, MatrixXs a)
+    public static MatrixXs operator*(double b, MatrixXs a)
     {
         MatrixXs result = new MatrixXs(a.rows, a.cols);
         for (int i = 0; i < a.rows; i++)
@@ -1012,6 +1013,16 @@ public class MatrixXs
         }
     }
 
+    public int GetRows()
+    {
+        return rows;
+    }
+
+    public int GetCols()
+    {
+        return cols;
+    }
+
     public void setZero()
     {
         for (int i = 0; i < rows; i++)
@@ -1021,27 +1032,9 @@ public class MatrixXs
 
 
     // 행렬 곱셈 메서드
-    public static MatrixXs operator*(MatrixXs a, MatrixXs b)
+    public static MatrixXs operator *(MatrixXs a, MatrixXs b)
     {
-        if (a.cols != b.rows)
-        {
-            throw new InvalidOperationException("첫 번째 행렬의 열의 개수와 두 번째 행렬의 행의 개수가 일치해야 합니다.");
-        }
-
-        MatrixXs result = new MatrixXs(a.rows, b.cols);
-        for (int i = 0; i < a.rows; i++)
-        {
-            for (int j = 0; j < b.cols; j++)
-            {
-                double sum = 0;
-                for (int k = 0; k < a.cols; k++)
-                {
-                    sum += a.GetElement(i, k) * b.GetElement(k, j);
-                }
-                result.SetElement(i, j, sum);
-            }
-        }
-        return result;
+        return MatrixMultiplicationGPU.Multiply(a, b);
     }
 
     public double this[int i, int j]
@@ -1317,4 +1310,79 @@ public class SparseXs
         return Cols < Rows ? Cols : Rows;
     }
 
+}
+
+public static class MatrixMultiplicationGPU
+{
+    public static ComputeShader computeShader;
+
+    // 행렬 곱셈을 위한 GPU 연산 실행
+    public static MatrixXs Multiply(MatrixXs a, MatrixXs b)
+    {
+        computeShader = Resources.Load<ComputeShader>("MatrixMultiplication");
+
+        if (a.GetCols() != b.GetRows())
+        {
+            throw new InvalidOperationException("첫 번째 행렬의 열의 개수와 두 번째 행렬의 행의 개수가 일치해야 합니다.");
+        }
+
+        int rows = a.GetRows();
+        int cols = b.GetCols();
+        int common = a.GetCols();
+
+        MatrixXs result = new MatrixXs(rows, cols);
+
+        float[] aData = new float[rows * common];
+        float[] bData = new float[common * cols];
+        float[] resultData = new float[rows * cols];
+
+        for (int i = 0; i < rows; i++)
+        {
+            for (int k = 0; k < common; k++)
+            {
+                aData[i * common + k] = (float)a.GetElement(i, k);
+            }
+        }
+
+        for (int k = 0; k < common; k++)
+        {
+            for (int j = 0; j < cols; j++)
+            {
+                bData[k * cols + j] = (float)b.GetElement(k, j);
+            }
+        }
+
+        ComputeBuffer bufferA = new ComputeBuffer(rows * common, sizeof(float));
+        ComputeBuffer bufferB = new ComputeBuffer(common * cols, sizeof(float));
+        ComputeBuffer bufferResult = new ComputeBuffer(rows * cols, sizeof(float));
+
+        bufferA.SetData(aData);
+        bufferB.SetData(bData);
+
+        int kernelHandle = computeShader.FindKernel("CSMatrixMultiply");
+        computeShader.SetBuffer(kernelHandle, "MatrixA", bufferA);
+        computeShader.SetBuffer(kernelHandle, "MatrixB", bufferB);
+        computeShader.SetBuffer(kernelHandle, "Result", bufferResult);
+        computeShader.SetInt("Rows", rows);
+        computeShader.SetInt("Cols", cols);
+        computeShader.SetInt("Common", common);
+
+        computeShader.Dispatch(kernelHandle, Mathf.CeilToInt((float)cols / 8), Mathf.CeilToInt((float)rows / 8), 1);
+
+        bufferResult.GetData(resultData);
+
+        for (int i = 0; i < rows; i++)
+        {
+            for (int j = 0; j < cols; j++)
+            {
+                result.SetElement(i, j, resultData[i * cols + j]);
+            }
+        }
+
+        bufferA.Release();
+        bufferB.Release();
+        bufferResult.Release();
+
+        return result;
+    }
 }

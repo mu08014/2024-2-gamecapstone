@@ -1,0 +1,28 @@
+#pragma kernel CSMatrixMultiply
+
+StructuredBuffer<float> MatrixA;
+StructuredBuffer<float> MatrixB;
+RWStructuredBuffer<float> Result;
+
+int Rows;
+int Cols;
+int Common;
+
+[numthreads(8, 8, 1)]
+void CSMatrixMultiply(uint3 id : SV_DispatchThreadID)
+{
+    int row = id.y;
+    int col = id.x;
+
+    if (row >= Rows || col >= Cols)
+        return;
+
+    float sum = 0.0f;
+
+    for (int k = 0; k < Common; k++)
+    {
+        sum += MatrixA[row * Common + k] * MatrixB[k * Cols + col];
+    }
+
+    Result[row * Cols + col] = sum;
+}
