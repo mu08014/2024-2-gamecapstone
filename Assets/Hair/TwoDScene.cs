@@ -8,6 +8,8 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using System.Threading;
 using System.Threading.Tasks;
+using Unity.Burst;
+using Unity.Collections;
 
 public struct Script
 {
@@ -898,6 +900,7 @@ public class TwoDScene
         num_tildeK_ = m_constraint_idx[5];
     }
 
+    [BurstCompile]
     public void localPostPreprocess(ref Vectors lambda, ref Vectors lambda_v,
         ref TripletXs J, ref TripletXs Jv,
         ref TripletXs Jxv, ref TripletXs tildeK,

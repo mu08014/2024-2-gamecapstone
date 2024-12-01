@@ -250,7 +250,7 @@ public class CMath
 public class Vectors
 {
     [SerializeField]
-    private double[] elements = new double[0];
+    public double[] elements = new double[3];
 
     public int Size => elements.Length;
 
@@ -261,7 +261,7 @@ public class Vectors
 
     public Vectors()
     {
-        elements = new double[0];
+        elements = new double[3];
     }
 
     public Vectors(int size)
@@ -783,7 +783,7 @@ public class Triplets
 
 public class TripletXs
 {
-    private List<Triplets> elements;
+    public List<Triplets> elements;
 
     public int Size => elements.Count;
 
