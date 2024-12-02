@@ -85,8 +85,8 @@ public class FurMeshTess : FurMesh
 
         hairMesh.Clear();
         hairMesh.SetVertices(positions.ToArray());
-        //hairMesh.SetUVs(2, normals.ToArray());
-        //hairMesh.SetUVs(3, uvs.ToArray());
+        hairMesh.SetUVs(2, normals.ToArray());
+        hairMesh.SetUVs(3, uvs.ToArray());
         hairMesh.SetUVs(4, idx.ToArray());
         hairMesh.SetIndices(indices.ToArray(), MeshTopology.Triangles, 0);
         hairMesh.RecalculateBounds();
@@ -110,6 +110,9 @@ public class FurMeshTess : FurMesh
         var rend = GetComponentInParent<MeshRenderer>();
         hairMesh.SetVertices(pos);
         rend.sharedMaterial.SetBuffer("_VertexPosition", posBuffer);
+
+        float ratio = (float)Screen.width / Screen.height;
+        meshRenderer.sharedMaterial.SetFloat("_AspectRatio", ratio);
     }
 
     private void OnDestroy()
