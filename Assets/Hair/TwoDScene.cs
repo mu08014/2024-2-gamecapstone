@@ -927,14 +927,26 @@ public class TwoDScene
 
         if (dx.size() == 0)
         {
-            Parallel.For(0, nf, (i) => {
-                foreach (Force f in m_hair_internal_forces[i])
+            int batchSize = 4;
+            int numBatches = (nf + batchSize - 1) / batchSize;
+
+            Parallel.For(0, numBatches, batchIndex =>
+            {
+                int start = batchIndex * batchSize;
+                int end = Math.Min(start + batchSize, nf);
+
+                for (int i = start; i < end; i++)
                 {
-                    if (!f.isParallelized())
+                    foreach (Force f in m_hair_internal_forces[i])
                     {
-                        f.computeIntegrationVars(m_x, m_v, m_interpolated_m, ref local_lambda,
-                                                 ref local_lambda_v, ref local_J, ref local_Jv, ref local_Jxv, ref local_tildeK,
-                                                 ref local_stiffness, ref local_damping, ref local_Phi, ref local_Phiv, local_dt);
+                        if (!f.isParallelized())
+                        {
+                            f.computeIntegrationVars(
+                                m_x, m_v, m_interpolated_m, ref local_lambda,
+                                ref local_lambda_v, ref local_J, ref local_Jv, ref local_Jxv, ref local_tildeK,
+                                ref local_stiffness, ref local_damping, ref local_Phi, ref local_Phiv, local_dt
+                            );
+                        }
                     }
                 }
             });
@@ -955,14 +967,26 @@ public class TwoDScene
             Vectors nx = m_x + dx;
             Vectors nv = m_v + dv;
 
-            Parallel.For(0, nf, (i) => {
-                foreach (Force f in m_hair_internal_forces[i])
+            int batchSize = 4;
+            int numBatches = (nf + batchSize - 1) / batchSize;
+
+            Parallel.For(0, numBatches, batchIndex =>
+            {
+                int start = batchIndex * batchSize;
+                int end = Math.Min(start + batchSize, nf);
+
+                for (int i = start; i < end; i++)
                 {
-                    if (!f.isParallelized())
+                    foreach (Force f in m_hair_internal_forces[i])
                     {
-                        f.computeIntegrationVars(nx, nv, m_interpolated_m, ref local_lambda,
-                                                 ref local_lambda_v, ref local_J, ref local_Jv, ref local_Jxv, ref local_tildeK,
-                                                 ref local_stiffness, ref local_damping, ref local_Phi, ref local_Phiv, local_dt);
+                        if (!f.isParallelized())
+                        {
+                            f.computeIntegrationVars(
+                                nx, nv, m_interpolated_m, ref local_lambda,
+                                ref local_lambda_v, ref local_J, ref local_Jv, ref local_Jxv, ref local_tildeK,
+                                ref local_stiffness, ref local_damping, ref local_Phi, ref local_Phiv, local_dt
+                            );
+                        }
                     }
                 }
             });
