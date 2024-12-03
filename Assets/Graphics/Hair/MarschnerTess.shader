@@ -37,7 +37,7 @@ Shader "Custom/MarschnerTess"
             #pragma require tessellation tessHW
             #pragma multi_compile_fwdbase
             #pragma multi_compile_shadowcaster
-            #pragma addshadow
+            //#pragma addshadow
             #include "UnityCG.cginc"
             #include "AutoLight.cginc"
 
@@ -228,7 +228,6 @@ Shader "Custom/MarschnerTess"
 
                         float4 nn = UnityObjectToClipPos(float4(n, 1));
                     
-                        //float3 offset = float3(0.01, 0, 0);
                         float3 offset = (offset0 * j + offset1 * (BAZIER_COUNT - j)) / BAZIER_COUNT;
                         offset.y *= _AspectRatio;
                         offset *= 0.01;
@@ -237,13 +236,14 @@ Shader "Custom/MarschnerTess"
                         p0.pos = nn;
                         p0.tangent = (tan0 * j + tan1 * (BAZIER_COUNT - j)) / BAZIER_COUNT;
                         p0.cameraDir = normalize(
-                            (mul(unity_WorldToObject, _WorldSpaceCameraPos) - float4(n, 1)).xyz);
+                            (mul(unity_WorldToObject, float4(_WorldSpaceCameraPos, 1)) - float4(n, 0)).xyz);
 
                         v2f v0 = p0;
                         v2f v1 = p0;
                         v0.pos.xy += offset.xy;
                         v1.pos.xy -= offset.xy;
 
+                        // 그림자 적용
                         TRANSFER_SHADOW(v0);
                         TRANSFER_SHADOW(v1);
 
@@ -257,21 +257,19 @@ Shader "Custom/MarschnerTess"
             {
                 // diffuse
                 float3 texColor = tex2D(_MainTex, i.uv);
-                float DotTL = saturate(dot(i.tangent, i.lightDir));
+                float DotTL = (dot(i.tangent, i.lightDir));
                 float3 diffuse = _DiffuseTerm * saturate(0.75 * sqrt(1 - DotTL * DotTL) + 0.25) * texColor;
 
-                float DotTC = max(dot(i.tangent, i.cameraDir), 0.0);
+                float DotTC = saturate(dot(i.tangent, i.cameraDir));
                 float SinTL = sqrt(1 - DotTL * DotTL);
                 float SinTC = sqrt(1 - DotTC * DotTC);
 
-                float a = 3.0 * 3.14159265359 / 180.0; 
+                float a = 5.0 * 3.14159265359 / 180.0; 
 
                 // specular
                 float3 specularR = _SpecularRTerm * pow(
-                //    DotTL * DotTC + SinTL * SinTC,
                     (DotTL*cos(2*a) - SinTL*sin(2*a)) * DotTC + (SinTL*cos(2*a) + DotTL*sin(2*a)) * SinTC,
                     _SpecularPower / 2);
-
                     
                 float3 specularTRT = _SpecularTRTTerm * pow(
                     (DotTL*cos(3*a) + SinTL*sin(3*a)) * DotTC + (SinTL*cos(3*a) - DotTL*sin(3*a)) * SinTC,
@@ -290,6 +288,7 @@ Shader "Custom/MarschnerTess"
             ENDCG
         }
         
+        // 그림자 패스
         Pass
         {
             Cull Off
@@ -314,7 +313,7 @@ Shader "Custom/MarschnerTess"
             #define MAX_HAIR_PARTICLE 15
             #define PARTICLE_COUNT 4
             #define BAZIER_COUNT 10
-            #define _TessellationFactor 5
+            #define _TessellationFactor 7
             #define _TessellationEdgeLength 1
 
             StructuredBuffer<float3> _VertexPosition; // 모든 position을 한 번에 전달
@@ -523,91 +522,9 @@ Shader "Custom/MarschnerTess"
             float4 frag (v2f i) : SV_Target
             {
                 return 0;
-                /*
-                // diffuse
-                float3 texColor = tex2D(_MainTex, i.uv);
-                float DotTL = saturate(dot(i.tangent, i.lightDir));
-                float3 diffuse = _DiffuseTerm * saturate(0.75 * sqrt(1 - DotTL * DotTL) + 0.25) * texColor;
-
-                float DotTC = max(dot(i.tangent, i.cameraDir), 0.0);
-                float SinTL = sqrt(1 - DotTL * DotTL);
-                float SinTC = sqrt(1 - DotTC * DotTC);
-
-                float a = 3.0 * 3.14159265359 / 180.0; 
-
-                // specular
-                float3 specularR = _SpecularRTerm * pow(
-                //    DotTL * DotTC + SinTL * SinTC,
-                    (DotTL*cos(2*a) - SinTL*sin(2*a)) * DotTC + (SinTL*cos(2*a) + DotTL*sin(2*a)) * SinTC,
-                    _SpecularPower / 2);
-
-                    
-                float3 specularTRT = _SpecularTRTTerm * pow(
-                    (DotTL*cos(3*a) + SinTL*sin(3*a)) * DotTC + (SinTL*cos(3*a) - DotTL*sin(3*a)) * SinTC,
-                    _SpecularPower) * _SecondSpecularColor;
-
-                float3 specular = specularR + specularTRT;
-                
-                // embient
-                float3 embient = i.color * _AmbientTerm * 100;
-               
-                TRANSFER_SHADOW(i);
-                float shadowAttenuation = SHADOW_ATTENUATION(i);
-                float3 color = (diffuse + specular) * shadowAttenuation  + embient;
-
-                return float4(embient, 1);
-                */
             }
             ENDCG
         }
-        
-        /*
-        Pass
-        {
-            Tags { "LightMode" = "ShadowCaster" }
-
-            CGPROGRAM
-            #pragma vertex vert
-            #pragma fragment frag
-            #pragma multi_compile_shadowcaster
-            #include "UnityCG.cginc"
-            #include "AutoLight.cginc"
-
-            float _LineWidth;
-            float _DiffuseTerm;
-            float _SpecularTerm;
-            float _SpecularPower;
-            fixed4 _Color;
-            sampler2D _MainTex;
-            
-            struct appdata
-            {
-                float4 vertex : POSITION;
-                float3 tangent : TEXCOORD1;
-                float3 normal : TEXCOORD2;
-                float2 uv : TEXCOORD3;
-            };
-
-            struct v2f
-            {
-                V2F_SHADOW_CASTER;
-            };
-
-            v2f vert(appdata_base v)
-            {
-                v2f o;
-                TRANSFER_SHADOW_CASTER(o)
-                return o;
-            }
-
-            fixed4 frag(v2f i) : SV_Target
-            {
-                return 0;
-            }
-            ENDCG
-        }*/
-        
-        //UsePass "VertexLit/SHADOWCASTER"
     }
     FallBack "Diffuse"
 }

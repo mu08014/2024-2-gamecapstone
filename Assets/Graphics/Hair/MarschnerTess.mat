@@ -61,7 +61,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _AmbientTerm: 0.108
+    - _AmbientTerm: 0.09
     - _AspectRatio: 1.7777778
     - _BumpScale: 1
     - _Cutoff: 0.5
@@ -78,8 +78,8 @@ Material:
     - _Parallax: 0.02
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
-    - _SpecularPower: 0
-    - _SpecularRTerm: 0
+    - _SpecularPower: 847
+    - _SpecularRTerm: 1
     - _SpecularTRTTerm: 0
     - _SpecularTTTerm: 0
     - _SrcBlend: 1
