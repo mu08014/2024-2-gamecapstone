@@ -27,9 +27,9 @@ public class FurMesh : MonoBehaviour
     public Mesh hairMesh;
 
 
-    private AddFur parent;
+    private AddFur _parent; // 유니티 계층구조 parent와 별개. furmesh 인스턴스를 생성시킨 addfur 저장하기 위해 사용
 
-    public AddFur Parent { get { return parent; } set { parent = value; } }
+    public AddFur Parent { get { return _parent; } set { _parent = value; } }
 
     private MeshRenderer _meshRenderer;
     public MeshRenderer meshRenderer
@@ -140,18 +140,18 @@ public class FurMesh : MonoBehaviour
         {
             foreach (var dot in hair.value._positions.Select((value2, index2) => (value2,index2)))
             {
-                HairParticle particle = new HairParticle(dot.value2);
+                HairParticle particle = new HairParticle(transform.TransformPoint(dot.value2));
                 particles.Add(particle);
                 if (dot.index2 == 0)
                 {
                     particle.IsFixed = true;
-                    //Debug.Log(particles.Count +"th particle is Fixed");
+
                 }
             }
-            //Debug.Log("Number of particles in " + hair.index + "th hair is " + particles.Count / (hair.index + 1));
+
         }
 
-        //Debug.Log("Number of Hairs is " + _hairs.Count);
+
 
         hairMesh.Clear();
 
@@ -161,8 +161,7 @@ public class FurMesh : MonoBehaviour
         hairMesh.SetUVs(2, normals.ToArray());
         hairMesh.SetIndices(indices.ToArray(), MeshTopology.Lines, 0);
         hairMesh.RecalculateBounds();
-
-        GetComponentInParent<HairComponent>().SetHairInfo(this.parent, particles);
+        this._parent.GetComponent<HairComponent>().SetHairInfo(this._parent, particles);
 
 
         
