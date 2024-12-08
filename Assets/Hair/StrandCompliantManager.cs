@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
@@ -417,8 +418,17 @@ public class StrandCompliantManager : SceneStepper
         TwoDScene local_scene = scene;
         int nhairs = m_integrators.Count;
 
-        Parallel.For(0, nhairs, hidx => {
-            m_integrators[hidx].preIterate(ref local_scene, dt);
+        int batchSize = 4;
+        int numBatches = (nhairs + batchSize - 1) / batchSize;
+
+        Parallel.For(0, numBatches, batchIndex => {
+            int start = batchIndex * batchSize;
+            int end = Math.Min(start + batchSize, nhairs);
+
+            for (int hidx = start; hidx < end; hidx++)
+            {
+                m_integrators[hidx].preIterate(ref local_scene, dt);
+            }
         });
 
         scene = local_scene;
