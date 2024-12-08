@@ -258,6 +258,15 @@ public class Vectors
     {
         return new UnityEngine.Vector3((float)v[0], (float)v[1], (float)v[2]);
     }
+    public static explicit operator Vectors(UnityEngine.Vector3 v)
+    {
+
+        Vectors V = new Vectors(3);
+        V.elements[0] = v.x;
+        V.elements[1] = v.y;
+        V.elements[2] = v.z;
+        return V;
+    }
 
     public Vectors()
     {

@@ -115,9 +115,9 @@ public class AddFur : MonoBehaviour
         {
             DestroyImmediate(_furmesh.gameObject);
         }
-        //_furmesh = Instantiate(_furmeshPrefab, transform.position, transform.rotation).GetComponent<FurMesh>();
         _furmesh = Instantiate(_furmeshPrefab).GetComponent<FurMesh>();
-        _furmesh.transform.localScale = transform.localScale;
+        //_furmesh = Instantiate(_furmeshPrefab, transform).GetComponent<FurMesh>();
+
         Debug.Log("A new furmesh object created!");
         _furmesh.Clear();
         _furmesh.Parent = this;
@@ -131,8 +131,11 @@ public class AddFur : MonoBehaviour
         for (int i = 0; i < tris.Length; i += 3)
         {
             var v1 = new Vertex(localToWorld.MultiplyPoint3x4(vertices[tris[i]]), normals[tris[i]], uvs[tris[i]]);
-            var v2 = new Vertex(localToWorld.MultiplyPoint3x4(vertices[tris[i+1]]), normals[tris[i+1]], uvs[tris[i+1]]);
-            var v3 = new Vertex(localToWorld.MultiplyPoint3x4(vertices[tris[i+2]]), normals[tris[i+2]], uvs[tris[i+2]]);
+            var v2 = new Vertex(localToWorld.MultiplyPoint3x4(vertices[tris[i + 1]]), normals[tris[i + 1]], uvs[tris[i + 1]]);
+            var v3 = new Vertex(localToWorld.MultiplyPoint3x4(vertices[tris[i + 2]]), normals[tris[i + 2]], uvs[tris[i + 2]]);
+            //var v1 = new Vertex(vertices[tris[i]], normals[tris[i]], uvs[tris[i]]);
+            //var v2 = new Vertex(vertices[tris[i + 1]], normals[tris[i + 1]], uvs[tris[i + 1]]);
+            //var v3 = new Vertex(vertices[tris[i + 2]], normals[tris[i + 2]], uvs[tris[i + 2]]);
             MakeFur(1, v1, v2, v3);
         }
 

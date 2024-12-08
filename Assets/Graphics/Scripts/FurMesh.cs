@@ -170,7 +170,8 @@ public class FurMesh : MonoBehaviour
         {
             foreach (var dot in hair.value._positions.Select((value2, index2) => (value2,index2)))
             {
-                HairParticle particle = new HairParticle(dot.value2);
+                Debug.Log(dot.value2 + ", " + transform.TransformPoint(dot.value2));
+                HairParticle particle = new HairParticle(transform.TransformPoint(dot.value2));
                 particles.Add(particle);
                 if (dot.index2 == 0)
                 {
@@ -191,7 +192,6 @@ public class FurMesh : MonoBehaviour
         hairMesh.SetUVs(2, normals.ToArray());
         hairMesh.SetIndices(indices.ToArray(), MeshTopology.Lines, 0);
         hairMesh.RecalculateBounds();
-
         this._parent.GetComponent<HairComponent>().SetHairInfo(this._parent, particles);
 
 

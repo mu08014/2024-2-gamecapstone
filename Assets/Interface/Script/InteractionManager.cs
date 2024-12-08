@@ -34,7 +34,6 @@ public class InteractionManager : MonoBehaviour
 
 
 
-
     private void Awake()
     {
         libwethairScene = new TwoDScene(isMassSpring);
@@ -294,6 +293,18 @@ public class InteractionManager : MonoBehaviour
             libwethairScene.applyScript(hairsubstep);
 
             libwethairScene.updateStrandParamsTimestep(hairsubstep);
+            HairComponent hairComp = null;
+
+            int particleCount = 0;
+            for (int i = 0; i < HairComponents.Count; i++)
+            {
+                hairComp = HairComponents[i];
+                Vectors basePos = (Vectors)hairComp.gameObject.transform.position - (Vectors)hairComp.anchorPos;
+                libwethairScene.addPositionValue(particleCount, hairComp.hairParticles.Count, basePos); // 큐브 위치랑 헤어 위치 동기화
+                hairComp.anchorPos += (Vector3)basePos;
+                particleCount += hairComp.hairParticles.Count;
+            }
+
 
             for (int i = 0; i < parameter.hairsteps; i++)
             {
@@ -308,7 +319,7 @@ public class InteractionManager : MonoBehaviour
 
             }
 
-            int particleCount = 0;
+            particleCount = 0;
             for (int i = 0; i < HairComponents.Count; ++i)
             {
                 foreach (HairParticle p in HairComponents[i].hairParticles)
@@ -319,7 +330,7 @@ public class InteractionManager : MonoBehaviour
                     p.velocity = new Vector3((float)v_vec[0], (float)v_vec[1], (float)v_vec[2]);
 
                     particleCount++;
-                }
+                } 
             }
             yield return new WaitForSeconds(Time.fixedDeltaTime);
         }
