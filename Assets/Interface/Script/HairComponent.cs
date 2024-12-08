@@ -138,7 +138,8 @@ public class HairComponent : MonoBehaviour {
                 {
                     new_x[j] = m_hair_x[j];
                 }
-                foreach (var vert in tempMesh.vertices.Select((value, index) => (value, index)))
+                //foreach (var vert in tempMesh.vertices.Select((value, index) => (value, index)))
+                foreach (var vert in _addFur[i].furmesh.getHairParticlePosArray().Select((value, index) => (value, index)))
                 {
                     new_x[StartofEachParam[i] + vert.index] = new Vectors(3);
                     new_x[StartofEachParam[i] + vert.index][0] = vert.value.x;
@@ -200,8 +201,9 @@ public class HairComponent : MonoBehaviour {
                 tempVecs[j - StartofEachParam[i]] = hairParticles[j].position;
 
             });
-            
-            _addFur[i].furmesh.hairMesh.SetVertices(tempVecs);
+
+            //_addFur[i].furmesh.hairMesh.SetVertices(tempVecs);
+            _addFur[i].furmesh.UpdateHairPos(tempVecs);
             _addFur[i].furmesh.hairMesh.RecalculateBounds();
 
         }

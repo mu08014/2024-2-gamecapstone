@@ -1,4 +1,4 @@
-Shader "Unlit/RaymarchMetaball"
+Shader "Custom/RaymarchMetaball"
 {
     Properties
     {

@@ -20,9 +20,9 @@ public class AddFur : MonoBehaviour
     [Range(1, 6)]
     public int Rod = 1;
 
-    [SerializeField] GameObject _furmeshprefab;
+    [SerializeField] protected GameObject _furmeshprefab;
     [SerializeField] Material _furmaterial = null;
-    [SerializeField] Texture2D _lengthTexture;
+    [SerializeField] protected Texture2D _lengthTexture;
     [SerializeField]
     private FurMesh _furmesh;
     public FurMesh furmesh {
@@ -48,10 +48,10 @@ public class AddFur : MonoBehaviour
 
         //StartCoroutine(HairUpdateCo());
     }
-    private Mesh _mesh;
-    private MeshFilter _meshFilter;
+    protected Mesh _mesh;
+    protected MeshFilter _meshFilter;
 
-    private class Vertex {
+    public class Vertex {
         public Vector3 position;
         public Vector3 normal;
         public Vector2 uv;
@@ -96,7 +96,9 @@ public class AddFur : MonoBehaviour
     }
 
 
-    public void initMesh(GameObject _furmeshPrefab)
+
+    public virtual void initMesh(GameObject _furmeshPrefab)
+
     {
 
         _meshFilter = GetComponent<MeshFilter>();

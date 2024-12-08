@@ -2,6 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Jobs;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.UIElements;
@@ -408,6 +411,7 @@ public class StrandCompliantManager : SceneStepper
                                      dx, dv, dt);
     }
 
+    [BurstCompile]
     public void localPreIterate(ref TwoDScene scene, double dt)
     {
         TwoDScene local_scene = scene;
