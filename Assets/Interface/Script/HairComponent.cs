@@ -14,7 +14,7 @@ public class HairComponent : MonoBehaviour {
     [SerializeField] 
     GameObject _furmeshprefab;
 
-    [HideInInspector]
+    [SerializeField, HideInInspector]
     public List<HairParticle> hairParticles;
 
     [SerializeField]
@@ -38,6 +38,8 @@ public class HairComponent : MonoBehaviour {
     [HideInInspector]
     public int[] EndofEachParam;
 
+    [HideInInspector]
+    public Vector3 anchorPos;
     public ref StrandParameters[] GetStrandHairParameters()
     {
         return ref strandHairs;
@@ -164,11 +166,11 @@ public class HairComponent : MonoBehaviour {
                 for (int j = 0; j < hairParticles.Count; j++)
                 {
                     m_hair_v[j] = new Vectors(3);
-                    if (m_hair_fixed[j])
+                    if (!m_hair_fixed[j])
                     {
                                            ////////////////////////////////////////////////////////////속도 초기값 
                         m_hair_v[j][0] = 0.00f;
-                        m_hair_v[j][1] = 0.05f;
+                        m_hair_v[j][1] = -0.05f;
                         m_hair_v[j][2] = 0.00f;
                     }
                 }
@@ -185,21 +187,27 @@ public class HairComponent : MonoBehaviour {
         Debug.Log("Number of m_hair_x are " + m_hair_x.Length);
 
         Debug.Log("Number of hairparticles are " + hairParticles.Count);
+        anchorPos = gameObject.transform.position;
     }
 
-    void Update()
+
+    private void FixedUpdate()
     {
         for (int i = 0; i < _addFur.Length; i++)
         {
             Vector3[] tempVecs = new Vector3[_addFur[i].furmesh.particles.Count];
-            Parallel.For(StartofEachParam[i], EndofEachParam[i]+1, (j) =>
+            Parallel.For(StartofEachParam[i], EndofEachParam[i] + 1, (j) =>
             {
                 tempVecs[j - StartofEachParam[i]] = hairParticles[j].position;
 
             });
+
             //_addFur[i].furmesh.hairMesh.SetVertices(tempVecs);
             _addFur[i].furmesh.UpdateHairPos(tempVecs);
+            _addFur[i].furmesh.hairMesh.RecalculateBounds();
+
         }
+
     }
 
 }

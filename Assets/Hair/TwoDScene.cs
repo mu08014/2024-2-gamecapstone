@@ -1202,4 +1202,12 @@ public class TwoDScene
             }
         }
     }
+
+    public void addPositionValue(int startPartNum, int PartNum, Vectors v)
+    {
+        Parallel.For(startPartNum, PartNum, (i) =>
+        {
+            m_x.SetSegment(getDof(i), 3, m_x.segment(getDof(i), 3) + v);
+        });
+    }
 }
