@@ -140,19 +140,18 @@ public class FurMesh : MonoBehaviour
         {
             foreach (var dot in hair.value._positions.Select((value2, index2) => (value2,index2)))
             {
-                Debug.Log(dot.value2 + ", " + transform.TransformPoint(dot.value2));
                 HairParticle particle = new HairParticle(transform.TransformPoint(dot.value2));
                 particles.Add(particle);
                 if (dot.index2 == 0)
                 {
                     particle.IsFixed = true;
-                    //Debug.Log(particles.Count +"th particle is Fixed");
+
                 }
             }
-            //Debug.Log("Number of particles in " + hair.index + "th hair is " + particles.Count / (hair.index + 1));
+
         }
 
-        //Debug.Log("Number of Hairs is " + _hairs.Count);
+
 
         hairMesh.Clear();
 
