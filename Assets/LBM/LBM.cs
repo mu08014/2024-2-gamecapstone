@@ -438,7 +438,8 @@ public class LBM : MonoBehaviour
                     if (spheres[x, y, z] != null)
                     {
                         Vector3 velocity = velocities[x, y, z];
-                        Debug.Log($"Velocity at ({x}, {y}, {z}): {velocity}");
+                        Debug.Log(spheres[x, y, z].transform.position);
+                        Debug.Log(velocity);
                     }
                 }
             }
@@ -454,6 +455,6 @@ public class LBM : MonoBehaviour
         Overlap();
         Update();
         Boundary();
-        //LogVelocities();
+        LogVelocities();
     }
 }
