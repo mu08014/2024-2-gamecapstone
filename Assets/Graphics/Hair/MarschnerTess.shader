@@ -42,9 +42,9 @@ Shader "Custom/MarschnerTess"
             #include "AutoLight.cginc"
 
             #define MAX_HAIR_PARTICLE 15
-            #define PARTICLE_COUNT 4
-            #define BAZIER_COUNT 10
-            #define _TessellationFactor 5
+            #define PARTICLE_COUNT 3
+            #define BAZIER_COUNT 7
+            #define _TessellationFactor 3
             #define _TessellationEdgeLength 1
 
             StructuredBuffer<float3> _VertexPosition; // 모든 position을 한 번에 전달
@@ -137,7 +137,7 @@ Shader "Custom/MarschnerTess"
             [outputtopology("triangle_cw")]
             [outputcontrolpoints(3)]
             [patchconstantfunc("PatchConstantFunction")]
-            //[maxtessfactor(64)]
+            [maxtessfactor(64)]
             v2f hull(InputPatch<v2f, 3> input, 
                 uint controlPointID : SV_OutputControlPointID)
             {
@@ -257,7 +257,7 @@ Shader "Custom/MarschnerTess"
             {
                 // diffuse
                 float3 texColor = tex2D(_MainTex, i.uv);
-                float DotTL = (dot(i.tangent, i.lightDir));
+                float DotTL = (dot(normalize(i.tangent), normalize(i.lightDir)));
                 float3 diffuse = _DiffuseTerm * saturate(0.75 * sqrt(1 - DotTL * DotTL) + 0.25) * texColor;
 
                 float DotTC = saturate(dot(i.tangent, i.cameraDir));
@@ -275,7 +275,7 @@ Shader "Custom/MarschnerTess"
                     (DotTL*cos(3*a) + SinTL*sin(3*a)) * DotTC + (SinTL*cos(3*a) - DotTL*sin(3*a)) * SinTC,
                     _SpecularPower) * _SecondSpecularColor;
 
-                float3 specular = specularR + specularTRT;
+                float3 specular = saturate(specularR) + saturate(specularTRT);
                 
                 // embient
                 float3 embient = texColor * _AmbientTerm;
@@ -311,9 +311,9 @@ Shader "Custom/MarschnerTess"
             #include "AutoLight.cginc"
 
             #define MAX_HAIR_PARTICLE 15
-            #define PARTICLE_COUNT 4
-            #define BAZIER_COUNT 10
-            #define _TessellationFactor 7
+            #define PARTICLE_COUNT 3
+            #define BAZIER_COUNT 7
+            #define _TessellationFactor 3
             #define _TessellationEdgeLength 1
 
             StructuredBuffer<float3> _VertexPosition; // 모든 position을 한 번에 전달
@@ -406,7 +406,7 @@ Shader "Custom/MarschnerTess"
             [outputtopology("triangle_cw")]
             [outputcontrolpoints(3)]
             [patchconstantfunc("PatchConstantFunction")]
-            //[maxtessfactor(64)]
+            [maxtessfactor(64)]
             v2f hull(InputPatch<v2f, 3> input, 
                 uint controlPointID : SV_OutputControlPointID)
             {

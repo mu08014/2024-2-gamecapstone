@@ -97,10 +97,14 @@ public class AddFurTess : AddFur
 
         for (int i = 0; i < tris.Length; i += 3)
         {
-            var normal = (normals[tris[i]] + normals[tris[i + 1]] + normals[tris[i + 2]]) / 3;
-            var v1 = new Vertex(vertices[tris[i]], normal, uvs[tris[i]]);
-            var v2 = new Vertex(vertices[tris[i+1]], normal, uvs[tris[i+1]]);
-            var v3 = new Vertex(vertices[tris[i+2]], normal, uvs[tris[i+2]]);
+            //var normal = (normals[tris[i]] + normals[tris[i + 1]] + normals[tris[i + 2]]) / 3;
+            //var v1 = new Vertex(vertices[tris[i]], normal, uvs[tris[i]]);
+            //var v2 = new Vertex(vertices[tris[i + 1]], normal, uvs[tris[i + 1]]);
+            //var v3 = new Vertex(vertices[tris[i + 2]], normal, uvs[tris[i + 2]]);
+
+            var v1 = new Vertex(vertices[tris[i]], normals[tris[i]], uvs[tris[i]]);
+            var v2 = new Vertex(vertices[tris[i + 1]], normals[tris[i + 1]], uvs[tris[i + 1]]);
+            var v3 = new Vertex(vertices[tris[i + 2]], normals[tris[i + 2]], uvs[tris[i + 2]]);
             MakeFur(Iter, v1, v2, v3);
         }
 

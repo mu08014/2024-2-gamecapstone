@@ -41,7 +41,8 @@ public class FurMesh : MonoBehaviour
             return _meshRenderer;
         }
     }
-    
+
+    [HideInInspector]
     public List<HairParticle> particles;
 
     /// <summary>
