@@ -172,10 +172,10 @@ public class StrandCompliantManager : SceneStepper
         
         for (int i = 0; i < m_dv.Size; i++)
         {
-            if (m_dv[i] > 1)
-                m_dv[i] = 1;
-            else if (m_dv[i] < -1)
-                m_dv[i] = -1;
+            if (m_dv[i] > 0.1)
+                m_dv[i] = 0.1;
+            else if (m_dv[i] < -0.1)
+                m_dv[i] = -0.1;
         }
         
         t1 = Time.realtimeSinceStartup;
@@ -192,10 +192,10 @@ public class StrandCompliantManager : SceneStepper
         
         for (int i = 0; i < m_vplus.Size; i++)
         {
-            if (m_vplus[i] > 1)
-                m_vplus[i] = 1;
-            else if (m_vplus[i] < -1)
-                m_vplus[i] = -1;
+            if (m_vplus[i] > 0.1)
+                m_vplus[i] = 0.1;
+            else if (m_vplus[i] < -0.1)
+                m_vplus[i] = -0.1;
         }
         
         m_dv = m_vplus - v;
@@ -203,10 +203,10 @@ public class StrandCompliantManager : SceneStepper
         
         for (int i = 0; i < m_dv.Size; i++)
         {
-            if (m_dv[i] > 1)
-                m_dv[i] = 1;
-            else if (m_dv[i] < -1)
-                m_dv[i] = -1;
+            if (m_dv[i] > 0.1)
+                m_dv[i] = 0.1;
+            else if (m_dv[i] < -0.1)
+                m_dv[i] = -0.1;
         }
         
         if (!m_compute_interhair)
@@ -228,30 +228,30 @@ public class StrandCompliantManager : SceneStepper
         
         for (int i = 0; i < m_dv.Size; i++)
         {
-            if (m_dv[i] > 1)
-                m_dv[i] = 1;
-            else if (m_dv[i] < -1)
-                m_dv[i] = -1;
+            if (m_dv[i] > 0.1)
+                m_dv[i] = 0.1;
+            else if (m_dv[i] < -0.1)
+                m_dv[i] = -0.1;
         }
         
         interhairUpdateNumConstraints(m_dxi, m_dv, dt);
         
         for (int i = 0; i < m_dv.Size; i++)
         {
-            if (m_dv[i] > 1)
-                m_dv[i] = 1;
-            else if (m_dv[i] < -1)
-                m_dv[i] = -1;
+            if (m_dv[i] > 0.1)
+                m_dv[i] = 0.1;
+            else if (m_dv[i] < -0.1)
+                m_dv[i] = -0.1;
         }
         
         computeRHSIncrementalInterhair(scene, dt, m_rhs, m_vplus);
         
         for (int i = 0; i < m_vplus.Size; i++)
         {
-            if (m_vplus[i] > 1)
-                m_vplus[i] = 1;
-            else if (m_vplus[i] < -1)
-                m_vplus[i] = -1;
+            if (m_vplus[i] > 0.1)
+                m_vplus[i] = 0.1;
+            else if (m_vplus[i] < -0.1)
+                m_vplus[i] = -0.1;
         }
         
         t1 = Time.realtimeSinceStartup;
@@ -263,10 +263,10 @@ public class StrandCompliantManager : SceneStepper
         
         for (int i = 0; i < m_vplus.Size; i++)
         {
-            if (m_vplus[i] > 1)
-                m_vplus[i] = 1;
-            else if (m_vplus[i] < -1)
-                m_vplus[i] = -1;
+            if (m_vplus[i] > 0.1)
+                m_vplus[i] = 0.1;
+            else if (m_vplus[i] < -0.1)
+                m_vplus[i] = -0.1;
         }
         
         // r = b - Ax0
@@ -341,10 +341,10 @@ public class StrandCompliantManager : SceneStepper
         
         for (int i = 0; i < m_vplus.Size; i++)
         {
-            if (m_vplus[i] > 1)
-                m_vplus[i] = 1;
-            else if (m_vplus[i] < -1)
-                m_vplus[i] = -1;
+            if (m_vplus[i] > 0.1)
+                m_vplus[i] = 0.1;
+            else if (m_vplus[i] < -0.1)
+                m_vplus[i] = -0.1;
         }
         
         m_dv = m_vplus - v;
@@ -352,20 +352,20 @@ public class StrandCompliantManager : SceneStepper
         
         for (int i = 0; i < m_dv.Size; i++)
         {
-            if (m_dv[i] > 1)
-                m_dv[i] = 1;
-            else if (m_dv[i] < -1)
-                m_dv[i] = -1;
+            if (m_dv[i] > 0.1)
+                m_dv[i] = 0.1;
+            else if (m_dv[i] < -0.1)
+                m_dv[i] = -0.1;
         }
         
         localUpdateLambda(ref scene, m_dx, m_dv, dt);
         
         for (int i = 0; i < m_dv.Size; i++)
         {
-            if (m_dv[i] > 1)
-                m_dv[i] = 1;
-            else if (m_dv[i] < -1)
-                m_dv[i] = -1;
+            if (m_dv[i] > 0.1)
+                m_dv[i] = 0.1;
+            else if (m_dv[i] < -0.1)
+                m_dv[i] = -0.1;
         }
         
         m_scene.storeLambda(m_lambda, m_lambda_v);
@@ -374,10 +374,10 @@ public class StrandCompliantManager : SceneStepper
         
         for (int i = 0; i < m_vplus.Size; i++)
         {
-            if (m_vplus[i] > 1)
-                m_vplus[i] = 1;
-            else if (m_vplus[i] < -1)
-                m_vplus[i] = -1;
+            if (m_vplus[i] > 0.1)
+                m_vplus[i] = 0.1;
+            else if (m_vplus[i] < -0.1)
+                m_vplus[i] = -0.1;
         }
         
         m_next_x = x + dt * v;
